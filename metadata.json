@@ -1,0 +1,6 @@
+{
+  "name": "Mashud Telecom Theme Hub",
+  "description": "An interactive live preview, simulation, and WordPress Theme source code generator for Mashud Telecom, featuring digital banking widgets, role-based dashboards, and a ZIP download system.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
