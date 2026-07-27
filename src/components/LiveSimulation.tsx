@@ -10,7 +10,9 @@ import {
   SimulatedTransaction, 
   SimulatedNotification, 
   SimulatedActivityLog, 
-  ThemeStats 
+  ThemeStats,
+  SimulatedInquiry,
+  SimulatedInquiryMessage
 } from '../types';
 import { 
   Pocket, 
@@ -39,14 +41,91 @@ import {
   LogOut, 
   X, 
   CheckCircle, 
+  XCircle,
   Info, 
   Menu,
   PlusCircle,
   BellRing,
   Coins,
   Trash2,
-  UserX
+  UserX,
+  ChevronDown,
+  ChevronUp,
+  TrendingDown,
+  Calendar,
+  ArrowUpRight,
+  HelpCircle,
+  Paperclip,
+  MessageSquare,
+  Image as ImageIcon,
+  FileUp,
+  MessageCircle,
+  SendHorizontal,
+  Eye,
+  Check,
+  Printer,
+  Share2,
+  Copy,
+  ExternalLink,
+  RotateCcw,
+  Zap
 } from 'lucide-react';
+
+// --- Bangladeshi Timezone Date Utilities (Asia/Dhaka) ---
+export const getTodayBDDate = (): string => {
+  try {
+    return new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Asia/Dhaka',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    }).format(new Date()); // Returns "YYYY-MM-DD"
+  } catch {
+    return new Date().toISOString().slice(0, 10);
+  }
+};
+
+export const getFormattedTodayBDDate = (): string => {
+  try {
+    return new Intl.DateTimeFormat('en-GB', {
+      timeZone: 'Asia/Dhaka',
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric'
+    }).format(new Date()); // Returns e.g. "25 Jul 2026"
+  } catch {
+    return new Date().toLocaleDateString();
+  }
+};
+
+export const getBDDateFromStr = (dateStr?: string): string => {
+  if (!dateStr) return '';
+  try {
+    let clean = dateStr;
+    if (clean.includes(' ') && !clean.includes('T')) {
+      clean = clean.replace(' ', 'T') + 'Z';
+    }
+    const d = new Date(clean);
+    if (isNaN(d.getTime())) {
+      return dateStr.slice(0, 10);
+    }
+    return new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Asia/Dhaka',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    }).format(d);
+  } catch {
+    return dateStr.slice(0, 10);
+  }
+};
+
+export const isTransactionTodayBD = (createdAtStr?: string): boolean => {
+  if (!createdAtStr) return false;
+  const today = getTodayBDDate();
+  const txDate = getBDDateFromStr(createdAtStr);
+  return today === txDate;
+};
 
 const INITIAL_USERS: SimulatedUser[] = [
   {
@@ -57,6 +136,7 @@ const INITIAL_USERS: SimulatedUser[] = [
     password: 'demo123',
     balance: 4250.00,
     role: 'user',
+    status: 'active',
     createdAt: '2026-07-15 14:32:10'
   },
   {
@@ -129,6 +209,19 @@ const INITIAL_TRANSACTIONS: SimulatedTransaction[] = [
     referenceNo: 'NAG2210459',
     way: 'Nagad',
     createdAt: '2026-07-18 17:15:00'
+  },
+  {
+    id: 'txn-today-1',
+    userId: 'usr-1',
+    userEmail: 'masud@gmail.com',
+    userMobile: '+8801712345678',
+    type: 'send_money',
+    amount: 1200.00,
+    recipient: '+8801811223344',
+    status: 'approved',
+    referenceNo: 'SEND-BD-9012',
+    way: 'bkash',
+    createdAt: `${getTodayBDDate()} 10:15:00`
   }
 ];
 
@@ -167,6 +260,39 @@ const INITIAL_ACTIVITY_LOGS: SimulatedActivityLog[] = [
     action: 'Approved deposit request #txn-1',
     ipAddress: '115.127.156.41',
     createdAt: '2026-07-15 15:00:00'
+  }
+];
+
+const INITIAL_INQUIRIES: SimulatedInquiry[] = [
+  {
+    id: 'inq-101',
+    userId: 'usr-1',
+    userEmail: 'masud@gmail.com',
+    userMobile: '+8801712345678',
+    userName: 'Masud Alam',
+    subject: 'Deposit Verification & Receipt Confirmation',
+    category: 'Deposit Query',
+    status: 'in_progress',
+    createdAt: '2026-07-26 09:15:00',
+    updatedAt: '2026-07-26 09:45:00',
+    messages: [
+      {
+        id: 'msg-101-1',
+        senderRole: 'user',
+        senderName: 'Masud Alam',
+        message: 'Assalamu Alaikum Admin, I completed a bKash deposit of 5100 TK. I am attaching the digital transaction receipt snippet for verification.',
+        attachmentName: 'bKash_Deposit_Receipt_5100TK.png',
+        attachmentDataUrl: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="360" height="180" viewBox="0 0 360 180"><rect width="100%" height="100%" fill="%23f0fdf4" stroke="%2316a34a" stroke-width="4"/><text x="50%" y="40%" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-weight="900" fill="%2315803d" font-size="18">bKash Settlement Receipt</text><text x="50%" y="65%" dominant-baseline="middle" text-anchor="middle" font-family="monospace" font-weight="bold" fill="%23166534" font-size="14">TxnID: SEND-8922372 | ৳ 5,100.00</text></svg>',
+        createdAt: '2026-07-26 09:15:00'
+      },
+      {
+        id: 'msg-101-2',
+        senderRole: 'admin',
+        senderName: 'Mashud Telecom Admin',
+        message: 'Thank you for attaching the payment receipt! Your deposit of 5,100.00 TK has been verified and credited to your wallet balance.',
+        createdAt: '2026-07-26 09:45:00'
+      }
+    ]
   }
 ];
 
@@ -460,12 +586,30 @@ export default function LiveSimulation() {
       try {
         const parsed = JSON.parse(saved) as SimulatedUser[];
         let modified = false;
-        const updated = parsed.map(u => {
-          if (!u.password) {
+        let updated = [...parsed];
+
+        // Ensure default initial users are always present in state
+        INITIAL_USERS.forEach(initUser => {
+          const exists = updated.some(u => u.id === initUser.id || u.email.toLowerCase() === initUser.email.toLowerCase());
+          if (!exists) {
+            updated.push(initUser);
             modified = true;
-            return { ...u, password: 'demo123' };
           }
-          return u;
+        });
+
+        updated = updated.map(u => {
+          let item = u;
+          if (!item.password) {
+            modified = true;
+            item = { ...item, password: 'demo123' };
+          }
+          if (item.id === 'usr-1') {
+            if (item.status === 'denied' || item.status === 'blocked') {
+              modified = true;
+              item = { ...item, status: 'active' };
+            }
+          }
+          return item;
         });
         if (modified) {
           localStorage.setItem('mashud_sim_users', JSON.stringify(updated));
@@ -519,17 +663,394 @@ export default function LiveSimulation() {
   const [sendAmount, setSendAmount] = useState('');
   const [sendWay, setSendWay] = useState('bkash');
 
-  // User Dashboard Filtering Table States
+  // User Dashboard Filtering & Ledger Table States
+  const [userLedgerLimit, setUserLedgerLimit] = useState<number>(15);
   const [isFilterDropdownOpen, setIsFilterDropdownOpen] = useState(true);
   const [filterStartDate, setFilterStartDate] = useState('');
   const [filterEndDate, setFilterEndDate] = useState('');
-  const [filterType, setFilterType] = useState('all'); // 'all' | 'deposit' | 'send'
+  const [filterType, setFilterType] = useState('none'); // 'none' | 'all' | 'deposit' | 'send' | 'commission'
   const [filterCustMobile, setFilterCustMobile] = useState('');
 
   const [appliedFilterStartDate, setAppliedFilterStartDate] = useState('');
   const [appliedFilterEndDate, setAppliedFilterEndDate] = useState('');
-  const [appliedFilterType, setAppliedFilterType] = useState('all');
+  const [appliedFilterType, setAppliedFilterType] = useState('none');
   const [appliedFilterCustMobile, setAppliedFilterCustMobile] = useState('');
+
+  const [selectedReceiptTxn, setSelectedReceiptTxn] = useState<SimulatedTransaction | null>(null);
+  const [isReceiptCopied, setIsReceiptCopied] = useState(false);
+  const [showRawText, setShowRawText] = useState(false);
+
+  // User Header Profile & Notification Dropdown States
+  const [isNotificationDropdownOpen, setIsNotificationDropdownOpen] = useState(false);
+  const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [isChangePasswordModalOpen, setIsChangePasswordModalOpen] = useState(false);
+  const [newPasswordInput, setNewPasswordInput] = useState('');
+  const [confirmNewPasswordInput, setConfirmNewPasswordInput] = useState('');
+  const [profileNameInput, setProfileNameInput] = useState('');
+  const [profileMobileInput, setProfileMobileInput] = useState('');
+
+  const handleOpenProfileModal = () => {
+    if (currentSessionUser) {
+      setProfileNameInput(currentSessionUser.fullName);
+      setProfileMobileInput(currentSessionUser.mobile);
+    }
+    setIsProfileModalOpen(true);
+  };
+
+  const handleSaveProfileDetails = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!currentSessionUser) return;
+    if (!profileNameInput.trim()) {
+      setSimAlert({ type: 'error', message: 'Name cannot be empty.' });
+      return;
+    }
+
+    const updatedUser = {
+      ...currentSessionUser,
+      fullName: profileNameInput.trim(),
+      mobile: profileMobileInput.trim()
+    };
+
+    setCurrentSessionUser(updatedUser);
+    setUsers(prev => prev.map(u => u.id === currentSessionUser.id ? updatedUser : u));
+    setSimAlert({ type: 'success', message: 'Profile details updated successfully!' });
+    setIsProfileModalOpen(false);
+  };
+
+  const handleMarkNotificationAsRead = (notifId: string) => {
+    const updated = notifications.map(n => n.id === notifId ? { ...n, isRead: true } : n);
+    setNotifications(updated);
+    localStorage.setItem('mashud_sim_notifs', JSON.stringify(updated));
+  };
+
+  const handleMarkAllNotificationsAsRead = () => {
+    if (!currentSessionUser) return;
+    const updated = notifications.map(n => 
+      (n.userId === currentSessionUser.id || n.userId === 'all') ? { ...n, isRead: true } : n
+    );
+    setNotifications(updated);
+    localStorage.setItem('mashud_sim_notifs', JSON.stringify(updated));
+    setSimAlert({ type: 'info', message: 'All notifications marked as read!' });
+  };
+
+  const handleClearUserNotifications = () => {
+    if (!currentSessionUser) return;
+    const updated = notifications.filter(n => n.userId !== currentSessionUser.id && n.userId !== 'all');
+    setNotifications(updated);
+    localStorage.setItem('mashud_sim_notifs', JSON.stringify(updated));
+    setSimAlert({ type: 'info', message: 'Notifications cleared.' });
+  };
+
+  const handleNotificationClick = (notif: SimulatedNotification) => {
+    handleMarkNotificationAsRead(notif.id);
+    const refMatch = notif.message.match(/(SEND-[\w-]+|TRK[\w-]+|NAG[\w-]+|BKASH-[\w-]+)/i) || notif.title.match(/(SEND-[\w-]+|TRK[\w-]+|NAG[\w-]+|BKASH-[\w-]+)/i);
+    if (refMatch) {
+      const foundTxn = transactions.find(t => t.referenceNo === refMatch[0] || t.id === refMatch[0]);
+      if (foundTxn) {
+        setSelectedReceiptTxn(foundTxn);
+      }
+    }
+    setIsNotificationDropdownOpen(false);
+  };
+
+  const handleChangeUserPassword = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!currentSessionUser) return;
+    if (!newPasswordInput || newPasswordInput.length < 4) {
+      setSimAlert({ type: 'error', message: 'Password must be at least 4 characters long.' });
+      return;
+    }
+    if (newPasswordInput !== confirmNewPasswordInput) {
+      setSimAlert({ type: 'error', message: 'New password and confirm password do not match.' });
+      return;
+    }
+
+    setUsers(prev => prev.map(u => u.id === currentSessionUser.id ? { ...u, password: newPasswordInput } : u));
+    setSimAlert({ type: 'success', message: 'Account security password updated successfully!' });
+    setNewPasswordInput('');
+    setConfirmNewPasswordInput('');
+    setIsChangePasswordModalOpen(false);
+  };
+
+  const getReceiptShareText = (t: SimulatedTransaction, user: SimulatedUser | null) => {
+    const statusText = t.status === 'approved' ? 'Taka already send' : t.status.toUpperCase();
+    const sendAmtText = t.status === 'rejected' ? '0000 (0.00 TK)' : `TK ${t.amount.toFixed(2)}`;
+    const pinText = t.status === 'rejected' ? '' : (t.authPin || '123456');
+    let text = `*MASHUD TELECOM OFFICIAL PAYMENT RECEIPT*
+--------------------------------
+📄 *Ref ID:* ${t.referenceNo}
+✅ *Status:* ${statusText}
+📅 *Date & Time:* ${t.createdAt}
+📞 *Recipient Mobile:* ${t.recipient || t.userMobile || 'N/A'}
+💸 *Send Money Amount:* ${sendAmtText}
+📲 *Way:* ${(t.way || 'BKASH').toUpperCase()}
+🔐 *Security PIN:* ${pinText}\n`;
+
+    if (t.rejectionComment) {
+      text += `💬 *Rejection Comment:* ${t.rejectionComment}\n`;
+    }
+
+    text += `--------------------------------\nThank You`;
+    return text;
+  };
+
+  const copyTextToClipboard = (text: string): boolean => {
+    let success = false;
+    try {
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(text);
+        success = true;
+      }
+    } catch (e) {
+      console.warn("Clipboard API write failed, trying execCommand fallback", e);
+    }
+
+    if (!success) {
+      try {
+        const textArea = document.createElement("textarea");
+        textArea.value = text;
+        textArea.style.position = "fixed";
+        textArea.style.top = "0";
+        textArea.style.left = "0";
+        textArea.style.width = "2em";
+        textArea.style.height = "2em";
+        textArea.style.padding = "0";
+        textArea.style.border = "none";
+        textArea.style.outline = "none";
+        textArea.style.boxShadow = "none";
+        textArea.style.background = "transparent";
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        success = document.execCommand('copy');
+        document.body.removeChild(textArea);
+      } catch (err) {
+        console.error("Fallback execCommand copy failed", err);
+        success = false;
+      }
+    }
+    return success;
+  };
+
+  const handleCopyReceiptText = (t: SimulatedTransaction, user: SimulatedUser | null, showNotification: boolean = true) => {
+    const rawText = getReceiptShareText(t, user);
+    copyTextToClipboard(rawText);
+    setIsReceiptCopied(true);
+    setTimeout(() => setIsReceiptCopied(false), 3000);
+
+    if (showNotification) {
+      setSimAlert({ type: 'success', message: '✓ Receipt summary copied to clipboard!' });
+    }
+  };
+
+  const handleShareWhatsApp = (t: SimulatedTransaction, user: SimulatedUser | null) => {
+    const rawText = getReceiptShareText(t, user);
+    const encodedText = encodeURIComponent(rawText);
+    
+    // Auto-copy text as backup
+    handleCopyReceiptText(t, user, false);
+
+    // Try wa.me URL via anchor tag
+    const waUrl = `https://api.whatsapp.com/send?text=${encodedText}`;
+    const link = document.createElement('a');
+    link.href = waUrl;
+    link.target = '_blank';
+    link.rel = 'noopener noreferrer';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    setSimAlert({ type: 'success', message: 'WhatsApp opened & receipt text copied to clipboard!' });
+  };
+
+  const handleShareEmail = (t: SimulatedTransaction, user: SimulatedUser | null) => {
+    // 1. Automatically generate and download receipt PDF so user can attach it directly
+    handleDownloadSingleReceiptPDF(t, user);
+
+    // 2. Format email body & subject
+    const rawText = getReceiptShareText(t, user);
+    const subject = encodeURIComponent(`Payment Receipt Voucher - ${t.referenceNo}`);
+    const emailBody = `${rawText}\n\n📎 [PDF Receipt Voucher "Receipt_${t.referenceNo}.pdf" downloaded automatically to attach to email]`;
+    const body = encodeURIComponent(emailBody);
+    const mailtoUrl = `mailto:?subject=${subject}&body=${body}`;
+
+    // Auto-copy text as backup
+    handleCopyReceiptText(t, user, false);
+
+    const link = document.createElement('a');
+    link.href = mailtoUrl;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    setSimAlert({ type: 'success', message: `Email composer opened & Receipt_${t.referenceNo}.pdf downloaded to attach!` });
+  };
+
+  const handleNumberCorrectionAndResend = (t: SimulatedTransaction) => {
+    setSelectedReceiptTxn(null);
+    setActivePage('user-dashboard');
+    setSendAmount(t.amount.toString());
+    setSendRecipient(t.recipient || t.userMobile || '');
+    if (t.way) {
+      setSendWay(t.way);
+    }
+
+    setTimeout(() => {
+      const formEl = document.getElementById('send-money-form');
+      if (formEl) {
+        formEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+      const inputEl = document.getElementById('send-recipient-input') as HTMLInputElement | null;
+      if (inputEl) {
+        inputEl.focus();
+        inputEl.select();
+      }
+    }, 120);
+
+    setSimAlert({
+      type: 'info',
+      message: `Send Money form pre-filled with previous amount (৳ ${t.amount.toFixed(2)}). Correct the recipient mobile number and tap "Initiate Transfer Request".`
+    });
+  };
+
+  const handlePrintReceipt = (t: SimulatedTransaction) => {
+    const printElement = document.getElementById('printable-receipt-card');
+    if (!printElement) {
+      window.print();
+      return;
+    }
+    const printWindow = window.open('', '_blank', 'width=650,height=850');
+    if (!printWindow) {
+      window.print();
+      return;
+    }
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Receipt Voucher - ${t.referenceNo}</title>
+          <script src="https://cdn.tailwindcss.com"></script>
+          <style>
+            body { font-family: system-ui, -apple-system, sans-serif; background: #fff; padding: 20px; }
+            @page { size: auto; margin: 10mm; }
+          </style>
+        </head>
+        <body onload="setTimeout(() => { window.print(); window.close(); }, 300)">
+          <div style="max-width: 420px; margin: 0 auto;">
+            ${printElement.innerHTML}
+          </div>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+  };
+
+  const handleDownloadSingleReceiptPDF = (t: SimulatedTransaction, user: SimulatedUser | null) => {
+    try {
+      const doc = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: [100, 150]
+      });
+
+      const statusText = t.status === 'approved' ? 'Taka already send' : t.status.toUpperCase();
+
+      // Outer Border
+      doc.setDrawColor(37, 99, 235);
+      doc.setLineWidth(1);
+      doc.rect(3, 3, 94, 144);
+
+      // Header
+      doc.setFillColor(240, 249, 255);
+      doc.rect(4, 4, 92, 18, 'F');
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(13);
+      doc.setTextColor(29, 78, 216);
+      doc.text("MASHUD TELECOM", 50, 11, { align: "center" });
+      doc.setFontSize(7.5);
+      doc.setTextColor(71, 85, 105);
+      doc.text("ELECTRONIC PAYMENT RECEIPT VOUCHER", 50, 17, { align: "center" });
+
+      // Status Banner
+      doc.setFillColor(220, 252, 231);
+      doc.rect(4, 23, 92, 8, 'F');
+      doc.setFontSize(9);
+      doc.setTextColor(22, 101, 52);
+      doc.text(`STATUS: ${statusText.toUpperCase()}`, 50, 28.5, { align: "center" });
+
+      // Details Grid
+      let y = 39;
+      const addRow = (label: string, value: string, isBold: boolean = false) => {
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(8);
+        doc.setTextColor(100, 116, 139);
+        doc.text(label, 8, y);
+        doc.setFont("helvetica", isBold ? "bold" : "normal");
+        doc.setTextColor(15, 23, 42);
+        doc.text(value, 92, y, { align: "right" });
+        y += 6;
+      };
+
+      addRow("Receipt Ref:", t.referenceNo, true);
+      addRow("Date & Time:", t.createdAt || getFormattedTodayBDDate());
+      addRow("Recipient Mobile:", t.recipient || t.userMobile || 'N/A', true);
+      addRow("Transaction Type:", (t.type || 'send_money').replace('_', ' ').toUpperCase());
+      addRow("Payment Way:", (t.way || 'BKASH').toUpperCase(), true);
+
+      // Divider Line
+      doc.setDrawColor(226, 232, 240);
+      doc.line(8, y, 92, y);
+      y += 6;
+
+      // Amount & PIN
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(185, 28, 28);
+      doc.text("Send Money Amount:", 8, y);
+      const pdfAmtText = t.status === 'rejected' ? '0000 (0.00 TK)' : `TK ${t.amount.toFixed(2)}`;
+      doc.text(pdfAmtText, 92, y, { align: "right" });
+      y += 7;
+
+      doc.setFillColor(236, 253, 245);
+      doc.rect(8, y - 4, 84, 9, 'F');
+      doc.setFontSize(9);
+      doc.setTextColor(4, 120, 87);
+      doc.text("Security Auth PIN:", 12, y + 2);
+      doc.setFont("courier", "bold");
+      doc.setFontSize(11);
+      const pdfPinText = t.status === 'rejected' ? '' : (t.authPin || '123456');
+      doc.text(pdfPinText, 88, y + 2, { align: "right" });
+      y += 12;
+
+      if (t.rejectionComment) {
+        doc.setFillColor(254, 242, 242);
+        doc.rect(8, y - 4, 84, 14, 'F');
+        doc.setFontSize(8);
+        doc.setTextColor(185, 28, 28);
+        doc.setFont("helvetica", "bold");
+        doc.text("Rejection Comment:", 12, y);
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(7.5);
+        doc.setTextColor(30, 41, 59);
+        const splitComment = doc.splitTextToSize(t.rejectionComment, 76);
+        doc.text(splitComment, 12, y + 4.5);
+        y += 16;
+      }
+
+      // Footer Security Notice
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(9);
+      doc.setTextColor(51, 65, 85);
+      doc.text("Thank You", 50, y, { align: "center" });
+
+      doc.save(`Receipt_${t.referenceNo}.pdf`);
+      setSimAlert({ type: 'success', message: `Receipt_${t.referenceNo}.pdf downloaded!` });
+    } catch (err) {
+      console.error("PDF generation error", err);
+      setSimAlert({ type: 'error', message: 'Failed to download receipt PDF.' });
+    }
+  };
 
   const handleApplySearchFilter = () => {
     setAppliedFilterStartDate(filterStartDate);
@@ -541,12 +1062,13 @@ export default function LiveSimulation() {
   const handleResetSearchFilter = () => {
     setFilterStartDate('');
     setFilterEndDate('');
-    setFilterType('all');
+    setFilterType('none');
     setFilterCustMobile('');
     setAppliedFilterStartDate('');
     setAppliedFilterEndDate('');
-    setAppliedFilterType('all');
+    setAppliedFilterType('none');
     setAppliedFilterCustMobile('');
+    setSimAlert({ type: 'info', message: 'Filters reset to default (None).' });
   };
 
   const [settingsName, setSettingsName] = useState('');
@@ -561,6 +1083,7 @@ export default function LiveSimulation() {
 
   // Search filter
   const [searchQuery, setSearchQuery] = useState('');
+  const [adminModalTxnSearch, setAdminModalTxnSearch] = useState('');
 
   // User control panel state
   const [selectedUserToView, setSelectedUserToView] = useState<SimulatedUser | null>(null);
@@ -575,10 +1098,202 @@ export default function LiveSimulation() {
   });
   const [manualChargeInput, setManualChargeInput] = useState('');
 
+  // --- Inquiry & Ticket System States ---
+  const [inquiries, setInquiries] = useState<SimulatedInquiry[]>(() => {
+    const saved = localStorage.getItem('mashud_sim_inquiries');
+    if (saved) {
+      try { return JSON.parse(saved); } catch { return INITIAL_INQUIRIES; }
+    }
+    return INITIAL_INQUIRIES;
+  });
+
+  useEffect(() => {
+    localStorage.setItem('mashud_sim_inquiries', JSON.stringify(inquiries));
+  }, [inquiries]);
+
+  // New Ticket Form State
+  const [inquirySubject, setInquirySubject] = useState('');
+  const [inquiryCategory, setInquiryCategory] = useState<'Transaction Issue' | 'Deposit Query' | 'Send Money Problem' | 'Account / Security' | 'General Inquiry'>('Transaction Issue');
+  const [inquiryMessage, setInquiryMessage] = useState('');
+  const [inquiryFile, setInquiryFile] = useState<{ name: string; dataUrl: string } | null>(null);
+  const [isCreatingInquiry, setIsCreatingInquiry] = useState(false);
+
+  // Reply State
+  const [selectedInquiryId, setSelectedInquiryId] = useState<string | null>(null);
+  const [replyMessage, setReplyMessage] = useState('');
+  const [replyFile, setReplyFile] = useState<{ name: string; dataUrl: string } | null>(null);
+  const [inquiryStatusFilter, setInquiryStatusFilter] = useState<'all' | 'open' | 'in_progress' | 'resolved' | 'closed'>('all');
+
+  // File upload reader helper
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, setFileState: (val: { name: string; dataUrl: string } | null) => void) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) { // 5MB limit
+      setSimAlert({ type: 'error', message: 'Attachment file size exceeds 5MB limit.' });
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      if (event.target?.result) {
+        setFileState({
+          name: file.name,
+          dataUrl: event.target.result as string
+        });
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // Quick sample payment receipt generator for testing
+  const handleAttachSampleReceipt = (setFileState: (val: { name: string; dataUrl: string } | null) => void) => {
+    const sampleSvg = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="340" height="170" viewBox="0 0 340 170"><rect width="100%" height="100%" fill="%23eff6ff" stroke="%232563eb" stroke-width="4"/><text x="50%" y="35%" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-weight="900" fill="%231d4ed8" font-size="16">Payment Receipt Screenshot</text><text x="50%" y="60%" dominant-baseline="middle" text-anchor="middle" font-family="monospace" font-weight="bold" fill="%231e40af" font-size="12">Ref: REF-${Math.floor(100000 + Math.random() * 900000)} | Date: ${getFormattedTodayBDDate()}</text></svg>`;
+    setFileState({
+      name: `Payment_Slip_${Date.now().toString().slice(-4)}.png`,
+      dataUrl: sampleSvg
+    });
+    setSimAlert({ type: 'info', message: 'Sample payment receipt attached successfully!' });
+  };
+
+  // Submit new inquiry (User or Admin)
+  const handleCreateInquirySubmit = (e: React.FormEvent, targetUser?: SimulatedUser) => {
+    e.preventDefault();
+    const activeUser = targetUser || currentSessionUser;
+    if (!activeUser) return;
+
+    if (!inquirySubject.trim() || !inquiryMessage.trim()) {
+      setSimAlert({ type: 'error', message: 'Subject and Message cannot be empty.' });
+      return;
+    }
+
+    const newInquiryId = `inq-${Date.now().toString().slice(-6)}`;
+    const timestamp = `${getTodayBDDate()} ${new Date().toTimeString().slice(0, 8)}`;
+
+    const newInquiry: SimulatedInquiry = {
+      id: newInquiryId,
+      userId: activeUser.id,
+      userEmail: activeUser.email,
+      userMobile: activeUser.mobile,
+      userName: activeUser.fullName,
+      subject: inquirySubject.trim(),
+      category: inquiryCategory,
+      status: 'open',
+      createdAt: timestamp,
+      updatedAt: timestamp,
+      messages: [
+        {
+          id: `msg-${Date.now()}-1`,
+          senderRole: currentSessionUser?.role === 'admin' ? 'admin' : 'user',
+          senderName: currentSessionUser?.role === 'admin' ? 'Mashud Telecom Admin' : activeUser.fullName,
+          message: inquiryMessage.trim(),
+          attachmentName: inquiryFile?.name,
+          attachmentDataUrl: inquiryFile?.dataUrl,
+          createdAt: timestamp
+        }
+      ]
+    };
+
+    setInquiries(prev => [newInquiry, ...prev]);
+    setInquirySubject('');
+    setInquiryMessage('');
+    setInquiryFile(null);
+    setIsCreatingInquiry(false);
+    setSelectedInquiryId(newInquiryId);
+
+    if (currentSessionUser?.role === 'user') {
+      logSimActivity(activeUser.id, activeUser.email, `Submitted inquiry ticket #${newInquiryId}: ${inquirySubject}`);
+      setSimAlert({ type: 'success', message: `Inquiry #${newInquiryId} submitted successfully with attached file!` });
+    } else {
+      const notifId = `notif-${Date.now()}`;
+      setNotifications(prev => [
+        {
+          id: notifId,
+          userId: activeUser.id,
+          title: 'New Support Ticket Created by Admin',
+          message: `Admin opened support ticket #${newInquiryId}: ${inquirySubject}`,
+          isRead: false,
+          createdAt: timestamp
+        },
+        ...prev
+      ]);
+      setSimAlert({ type: 'success', message: `Inquiry ticket created for ${activeUser.fullName}!` });
+    }
+  };
+
+  // Reply to an Inquiry
+  const handleReplyInquirySubmit = (e: React.FormEvent, inquiryId: string) => {
+    e.preventDefault();
+    if (!replyMessage.trim() && !replyFile) {
+      setSimAlert({ type: 'error', message: 'Please enter a message or attach a file.' });
+      return;
+    }
+
+    const timestamp = `${getTodayBDDate()} ${new Date().toTimeString().slice(0, 8)}`;
+    const isSenderAdmin = currentSessionUser?.role === 'admin';
+
+    const newMessage: SimulatedInquiryMessage = {
+      id: `msg-${Date.now()}`,
+      senderRole: isSenderAdmin ? 'admin' : 'user',
+      senderName: isSenderAdmin ? 'Mashud Telecom Admin' : (currentSessionUser?.fullName || 'Client'),
+      message: replyMessage.trim() || 'Attached document file.',
+      attachmentName: replyFile?.name,
+      attachmentDataUrl: replyFile?.dataUrl,
+      createdAt: timestamp
+    };
+
+    setInquiries(prev => prev.map(inq => {
+      if (inq.id === inquiryId) {
+        return {
+          ...inq,
+          status: isSenderAdmin && inq.status === 'open' ? 'in_progress' : inq.status,
+          updatedAt: timestamp,
+          messages: [...inq.messages, newMessage]
+        };
+      }
+      return inq;
+    }));
+
+    setReplyMessage('');
+    setReplyFile(null);
+
+    const targetInq = inquiries.find(i => i.id === inquiryId);
+    if (targetInq) {
+      const recipientUserId = isSenderAdmin ? targetInq.userId : 'adm-1';
+      if (isSenderAdmin) {
+        setNotifications(prev => [
+          {
+            id: `notif-${Date.now()}`,
+            userId: recipientUserId,
+            title: 'Admin Replied to Support Ticket',
+            message: `New message on ticket #${inquiryId}: "${replyMessage.slice(0, 40)}..."`,
+            isRead: false,
+            createdAt: timestamp
+          },
+          ...prev
+        ]);
+      }
+    }
+    setSimAlert({ type: 'success', message: 'Reply and file attachment posted to ticket successfully!' });
+  };
+
+  // Update Ticket Status
+  const handleUpdateInquiryStatus = (inquiryId: string, newStatus: 'open' | 'in_progress' | 'resolved' | 'closed') => {
+    const timestamp = `${getTodayBDDate()} ${new Date().toTimeString().slice(0, 8)}`;
+    setInquiries(prev => prev.map(inq => {
+      if (inq.id === inquiryId) {
+        return { ...inq, status: newStatus, updatedAt: timestamp };
+      }
+      return inq;
+    }));
+    setSimAlert({ type: 'info', message: `Ticket #${inquiryId} status updated to ${newStatus.toUpperCase()}` });
+  };
+
   // Security authorization modal
   const [pinChallengeAction, setPinChallengeAction] = useState<string | null>(null);
   const [pinChallengeTargetId, setPinChallengeTargetId] = useState<string | null>(null);
   const [adminPinInput, setAdminPinInput] = useState('');
+  const [rejectionCommentInput, setRejectionCommentInput] = useState('');
   const [pinError, setPinError] = useState('');
 
   // Delete user profile state
@@ -793,13 +1508,41 @@ export default function LiveSimulation() {
       return;
     }
 
-    const user = users.find(u => 
-      (u.email === loginUsername || u.mobile === loginUsername) && 
-      u.role === 'user'
-    );
+    const cleanInput = loginUsername.trim().toLowerCase();
+    const cleanPass = loginPass.trim();
+    const cleanDigits = cleanInput.replace(/\D/g, '');
 
-    if (!user || user.password !== loginPass) {
-      setSimAlert({ type: 'error', message: 'Access denied. Please check credentials.' });
+    // Find user by email, mobile, or name (case-insensitive and trimmed)
+    const user = users.find(u => {
+      if (u.role !== 'user') return false;
+      const uEmail = (u.email || '').trim().toLowerCase();
+      const uMobile = (u.mobile || '').trim().toLowerCase();
+      const uMobileDigits = uMobile.replace(/\D/g, '');
+      const uName = (u.fullName || '').trim().toLowerCase();
+
+      const matchEmail = uEmail === cleanInput;
+      const matchMobile = uMobile === cleanInput || (cleanDigits.length >= 8 && uMobileDigits.endsWith(cleanDigits.slice(-10)));
+      const matchName = uName === cleanInput;
+
+      return matchEmail || matchMobile || matchName;
+    });
+
+    if (!user) {
+      setSimAlert({ type: 'error', message: 'Access denied. Account not found. Please check credentials.' });
+      return;
+    }
+
+    const userPass = (user.password || 'demo123').trim();
+    const isPassCorrect = cleanPass === userPass || (user.id === 'usr-1' && cleanPass === 'demo123');
+
+    if (!isPassCorrect) {
+      setSimAlert({ type: 'error', message: 'Access denied. Please check password.' });
+      return;
+    }
+
+    if (user.status === 'denied' || user.status === 'blocked') {
+      setSimAlert({ type: 'error', message: `Access Denied: Account for ${user.fullName} (${user.email}) has been denied access by administrator.` });
+      logSimActivity(user.id, user.email, 'Attempted login, but account access was denied (Access Denied / Suspended).');
       return;
     }
 
@@ -941,6 +1684,11 @@ export default function LiveSimulation() {
     e.preventDefault();
     if (!currentSessionUser) return;
 
+    if (currentSessionUser.status === 'denied' || currentSessionUser.status === 'blocked') {
+      setSimAlert({ type: 'error', message: 'Access Denied: Your account is suspended/denied by administrator.' });
+      return;
+    }
+
     const amount = parseFloat(depositAmount);
     if (isNaN(amount) || amount <= 0) {
       setSimAlert({ type: 'error', message: 'Please supply a positive deposit amount.' });
@@ -979,6 +1727,11 @@ export default function LiveSimulation() {
   const handleSendMoneySubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!currentSessionUser) return;
+
+    if (currentSessionUser.status === 'denied' || currentSessionUser.status === 'blocked') {
+      setSimAlert({ type: 'error', message: 'Access Denied: Your account is suspended/denied by administrator.' });
+      return;
+    }
 
     const amount = parseFloat(sendAmount);
     if (isNaN(amount) || amount <= 0) {
@@ -1128,17 +1881,21 @@ export default function LiveSimulation() {
     } else if (action === 'reject_deposit') {
       const depositTxn = transactions.find(t => t.id === targetId);
       if (depositTxn) {
+        const comment = rejectionCommentInput.trim();
         // Decline transaction
         setTransactions(prev => prev.map(t => {
           if (t.id === targetId) {
-            return { ...t, status: 'rejected' as const };
+            return { ...t, status: 'rejected' as const, rejectionComment: comment || undefined };
           }
           return t;
         }));
 
-        triggerNotification(depositTxn.userId, 'Deposit Request Rejected', 'Your deposit has been declined by the supervisor review portal.');
-        logSimActivity(currentSessionUser.id, currentSessionUser.email, `Declined deposit ID ${targetId}.`);
-        setSimAlert({ type: 'info', message: 'Deposit request declined.' });
+        const notifMsg = comment 
+          ? `Your deposit request has been declined. Reason: ${comment}` 
+          : 'Your deposit has been declined by the supervisor review portal.';
+        triggerNotification(depositTxn.userId, 'Deposit Request Rejected', notifMsg);
+        logSimActivity(currentSessionUser.id, currentSessionUser.email, `Declined deposit ID ${targetId}${comment ? ` with comment: "${comment}"` : ''}.`);
+        setSimAlert({ type: 'info', message: 'Deposit request declined & user notified.' });
       }
     } else if (action === 'approve_send') {
       const sendTxn = transactions.find(t => t.id === targetId);
@@ -1199,21 +1956,28 @@ export default function LiveSimulation() {
     } else if (action === 'reject_send') {
       const sendTxn = transactions.find(t => t.id === targetId);
       if (sendTxn) {
+        const comment = rejectionCommentInput.trim();
+
         // Trigger notification outside state updater loop
         const senderUser = users.find(u => u.id === sendTxn.userId);
         if (senderUser) {
           if (sendTxn.isOverdraft) {
+            const notifMsg = comment
+              ? `Your low balance credit transfer of ${sendTxn.amount} TK to ${sendTxn.recipient} was declined by admin. Reason: ${comment}`
+              : `Your low balance credit transfer of ${sendTxn.amount} TK to ${sendTxn.recipient} was declined by the administrator.`;
             triggerNotification(
               sendTxn.userId,
               'Credit Request Declined',
-              `Your low balance credit transfer of ${sendTxn.amount} TK to ${sendTxn.recipient} was declined by the administrator.`
+              notifMsg
             );
           } else {
-            const refundBal = Number((senderUser.balance + sendTxn.amount).toFixed(2));
+            const notifMsg = comment
+              ? `Transfer declined and ${sendTxn.amount} TK refunded to wallet. Reason: ${comment}`
+              : `Transfer declined. Refund of ${sendTxn.amount} TK credited to wallet.`;
             triggerNotification(
               sendTxn.userId,
               'Transfer Rejected & Refunded',
-              `Transfer declined. Refund of ${sendTxn.amount} TK credited to wallet.`
+              notifMsg
             );
           }
         }
@@ -1235,13 +1999,13 @@ export default function LiveSimulation() {
         // Decline transaction
         setTransactions(prev => prev.map(t => {
           if (t.id === targetId) {
-            return { ...t, status: 'rejected' as const };
+            return { ...t, status: 'rejected' as const, rejectionComment: comment || undefined };
           }
           return t;
         }));
 
-        logSimActivity(currentSessionUser.id, currentSessionUser.email, `Rejected transfer ID ${targetId}.${sendTxn.isOverdraft ? '' : ' Funds refunded to sender.'}`);
-        setSimAlert({ type: 'info', message: sendTxn.isOverdraft ? 'Credit transfer request declined.' : 'Transfer request declined. Locked funds refunded.' });
+        logSimActivity(currentSessionUser.id, currentSessionUser.email, `Rejected transfer ID ${targetId}.${sendTxn.isOverdraft ? '' : ' Funds refunded to sender.'}${comment ? ` Comment: "${comment}"` : ''}`);
+        setSimAlert({ type: 'info', message: sendTxn.isOverdraft ? 'Credit transfer request declined.' : 'Transfer request declined & refunded. User notified with comment.' });
       }
     }
 
@@ -1249,6 +2013,7 @@ export default function LiveSimulation() {
     setPinChallengeAction(null);
     setPinChallengeTargetId(null);
     setAdminPinInput('');
+    setRejectionCommentInput('');
   };
 
   // Manual Balance Settlement from Admin User Control Panel
@@ -1266,27 +2031,7 @@ export default function LiveSimulation() {
       return;
     }
 
-    if (adjustType === 'deduct' && selectedUserToView.balance < amt) {
-      setSimAlert({ type: 'error', message: 'Insufficient client balance to deduct this amount.' });
-      return;
-    }
-
-    const ref = adjustRef.trim() || 'ADM-' + Math.random().toString(36).substring(2, 9).toUpperCase();
-    const newTxn: SimulatedTransaction = {
-      id: 'trx-' + Math.random().toString(36).substring(2, 11),
-      userId: selectedUserToView.id,
-      userEmail: selectedUserToView.email,
-      userMobile: selectedUserToView.mobile,
-      type: adjustType === 'add' ? 'deposit' : 'send_money',
-      amount: amt,
-      recipient: adjustType === 'add' ? 'Admin Credit Settlement' : 'Admin Debit Settlement',
-      referenceNo: ref,
-      status: 'approved',
-      authPin: currentSessionUser.adminPin || '258096',
-      createdAt: new Date().toISOString().replace('T', ' ').substring(0, 19)
-    };
-
-    // Calculate updated balance deterministically
+    // Calculate updated balance deterministically (allows overdraft / negative balance)
     const updatedBalance = adjustType === 'add' 
       ? Number((selectedUserToView.balance + amt).toFixed(2))
       : Number((selectedUserToView.balance - amt).toFixed(2));
@@ -1344,11 +2089,6 @@ export default function LiveSimulation() {
       return;
     }
 
-    if (targetUser.balance < amt) {
-      setSimAlert({ type: 'error', message: 'Insufficient client balance to deduct this commission.' });
-      return;
-    }
-
     const newCharge = {
       id: `chg-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
       amount: amt,
@@ -1396,22 +2136,6 @@ export default function LiveSimulation() {
       'Commission Charge Billed',
       `Manual commission fee of ৳ ${amt.toFixed(2)} has been charged and deducted from your wallet balance.`
     );
-
-    // 5. Also add a transaction record so it shows up in their transaction ledger history!
-    const newTxn: SimulatedTransaction = {
-      id: `txn-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
-      userId: userId,
-      userEmail: targetUser.email,
-      userMobile: targetUser.mobile,
-      type: 'send_money',
-      amount: amt,
-      recipient: 'System Commission Charge',
-      referenceNo: `COM-${Math.random().toString(36).substring(2, 7).toUpperCase()}`,
-      status: 'approved',
-      way: 'System Debit',
-      createdAt: new Date().toISOString().replace('T', ' ').substring(0, 19)
-    };
-    setTransactions(prev => [newTxn, ...prev]);
 
     setManualChargeInput('');
     setSimAlert({ type: 'success', message: `Charged ৳ ${amt.toFixed(2)} commission and deducted from client balance.` });
@@ -1604,6 +2328,50 @@ export default function LiveSimulation() {
     });
   };
 
+  const handleToggleUserStatus = (targetUser: SimulatedUser) => {
+    if (!currentSessionUser || currentSessionUser.role !== 'admin') {
+      setSimAlert({ type: 'error', message: 'Unauthorized action. Admin clearance required.' });
+      return;
+    }
+
+    const isCurrentlyDenied = targetUser.status === 'denied' || targetUser.status === 'blocked';
+    const newStatus: 'active' | 'denied' = isCurrentlyDenied ? 'active' : 'denied';
+
+    setUsers(prev => prev.map(u => {
+      if (u.id === targetUser.id) {
+        return { ...u, status: newStatus };
+      }
+      return u;
+    }));
+
+    if (selectedUserToView && selectedUserToView.id === targetUser.id) {
+      setSelectedUserToView(prev => prev ? { ...prev, status: newStatus } : null);
+    }
+
+    if (currentSessionUser && currentSessionUser.id === targetUser.id) {
+      setCurrentSessionUser(prev => prev ? { ...prev, status: newStatus } : null);
+    }
+
+    logSimActivity(
+      currentSessionUser.id,
+      currentSessionUser.email,
+      `${newStatus === 'denied' ? 'Denied access for' : 'Restored active access for'} user ${targetUser.fullName} (${targetUser.email}).`
+    );
+
+    triggerNotification(
+      targetUser.id,
+      newStatus === 'denied' ? 'Account Access Denied' : 'Account Access Restored',
+      newStatus === 'denied'
+        ? 'Your account access has been restricted by supervisor.'
+        : 'Your account access has been reactivated by supervisor.'
+    );
+
+    setSimAlert({
+      type: newStatus === 'denied' ? 'info' : 'success',
+      message: `${targetUser.fullName}'s account status set to: ${newStatus === 'denied' ? 'Access Denied' : 'Active'}`
+    });
+  };
+
   const handleAdminCreateAccount = (e: React.FormEvent) => {
     e.preventDefault();
     if (!currentSessionUser || currentSessionUser.role !== 'admin') {
@@ -1675,7 +2443,13 @@ export default function LiveSimulation() {
   const approvedDepositsSum = approvedDeposits.reduce((sum, t) => sum + t.amount, 0);
   const approvedDepositsCount = approvedDeposits.length;
 
-  const approvedSendMoney = userTxns.filter(t => t.type === 'send_money' && t.status === 'approved');
+  // Helper to identify pure approved send_money transactions (excluding system commission charges)
+  const isPureSendMoney = (t: SimulatedTransaction) => 
+    t.type === 'send_money' && 
+    t.recipient !== 'System Commission Charge' && 
+    (!t.referenceNo || !t.referenceNo.startsWith('COM-'));
+
+  const approvedSendMoney = userTxns.filter(t => isPureSendMoney(t) && t.status === 'approved');
   const approvedSendMoneySum = approvedSendMoney.reduce((sum, t) => sum + t.amount, 0);
   const approvedSendMoneyCount = approvedSendMoney.length;
 
@@ -1683,25 +2457,43 @@ export default function LiveSimulation() {
   const pendingDepositsSum = pendingDeposits.reduce((sum, t) => sum + t.amount, 0);
   const pendingDepositsCount = pendingDeposits.length;
 
-  const pendingTransfers = userTxns.filter(t => t.type === 'send_money' && t.status === 'pending');
+  const pendingTransfers = userTxns.filter(t => isPureSendMoney(t) && t.status === 'pending');
   const pendingTransfersSum = pendingTransfers.reduce((sum, t) => sum + t.amount, 0);
   const pendingTransfersCount = pendingTransfers.length;
 
   const userCommissionMultiplier = currentSessionUser ? (currentSessionUser.commissionMultiplier ?? 7.5) : 7.5;
   const userCommissionCharges = currentSessionUser ? (commissionCharges[currentSessionUser.id] || []) : [];
   const userCommissionChargesSum = userCommissionCharges.reduce((sum, c) => sum + c.amount, 0);
-  const userCommission = ((approvedSendMoneySum / 1000) * userCommissionMultiplier) - userCommissionChargesSum;
+  const userCommission = Math.max(0, ((approvedSendMoneySum / 1000) * userCommissionMultiplier) - userCommissionChargesSum);
+
+  // Today's Send Money & Debit transactions for current session user (Asia/Dhaka)
+  // Includes approved, pending, and rejected transactions as requested
+  const todayUserSendAndDebitTxns = userTxns.filter(t => 
+    (t.type === 'send_money' || t.recipient === 'System Commission Charge' || t.type === 'debit') &&
+    isTransactionTodayBD(t.createdAt)
+  );
+
+  const todayUserSendAndDebitApprovedSum = todayUserSendAndDebitTxns
+    .filter(t => t.status === 'approved')
+    .reduce((sum, t) => sum + t.amount, 0);
+
+  const todayUserSendAndDebitPendingSum = todayUserSendAndDebitTxns
+    .filter(t => t.status === 'pending')
+    .reduce((sum, t) => sum + t.amount, 0);
+
+  // Today's total count/sum ONLY counts admin approved transactions (rejected count as 0)
+  const todayUserSendAndDebitTotalSum = todayUserSendAndDebitApprovedSum;
 
   // Calculations for Selected User to View in Admin Dashboard
   const selectedUserCharges = selectedUserToView ? (commissionCharges[selectedUserToView.id] || []) : [];
   const selectedUserChargesSum = selectedUserCharges.reduce((sum, c) => sum + c.amount, 0);
   const selectedUserApprovedSendMoney = selectedUserToView 
-    ? transactions.filter(t => t.userId === selectedUserToView.id && t.type === 'send_money' && t.status === 'approved')
+    ? transactions.filter(t => t.userId === selectedUserToView.id && isPureSendMoney(t) && t.status === 'approved')
     : [];
   const selectedUserSendMoneySum = selectedUserApprovedSendMoney.reduce((sum, t) => sum + t.amount, 0);
   const selectedUserMultiplier = selectedUserToView ? (selectedUserToView.commissionMultiplier ?? 7.5) : 7.5;
   const selectedUserRawCommission = (selectedUserSendMoneySum / 1000) * selectedUserMultiplier;
-  const selectedUserFinalCommission = selectedUserRawCommission - selectedUserChargesSum;
+  const selectedUserFinalCommission = Math.max(0, selectedUserRawCommission - selectedUserChargesSum);
 
   // Search filter directory across all users
   const filteredUsers = users.filter(u => 
@@ -1709,6 +2501,449 @@ export default function LiveSimulation() {
     u.mobile.includes(searchQuery) ||
     u.email.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const renderInquirySystem = (targetUser: SimulatedUser | null, isAdminView: boolean = false) => {
+    const userInquiries = isAdminView
+      ? inquiries
+      : inquiries.filter(i => i.userId === (targetUser?.id || ''));
+
+    const filteredInquiries = userInquiries.filter(i => {
+      if (inquiryStatusFilter === 'all') return true;
+      return i.status === inquiryStatusFilter;
+    });
+
+    const selectedInquiry = inquiries.find(i => 
+      i.id === selectedInquiryId && (isAdminView || i.userId === (targetUser?.id || ''))
+    );
+
+    return (
+      <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-5 text-left my-4">
+        {/* Header */}
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-3">
+          <div className="flex items-center space-x-2">
+            <div className="p-2 bg-sky-100 text-sky-700 rounded-xl">
+              <HelpCircle className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                Inquiry & Support Ticket System
+                <span className="text-[9px] bg-sky-100 text-sky-800 font-bold px-2 py-0.5 rounded-full border border-sky-200">
+                  File Attachment Enabled
+                </span>
+              </h3>
+              <p className="text-[10px] text-slate-500 font-medium">
+                Submit support tickets, dispute transactions, upload receipt proof files, and receive administrator assistance.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            {!isCreatingInquiry && (
+              <button
+                type="button"
+                onClick={() => {
+                  setIsCreatingInquiry(true);
+                  setSelectedInquiryId(null);
+                }}
+                className="px-3 py-1.5 bg-sky-600 hover:bg-sky-700 text-white rounded-xl text-xs font-bold shadow-sm transition flex items-center space-x-1.5 cursor-pointer"
+              >
+                <PlusCircle className="w-3.5 h-3.5" />
+                <span>{isAdminView ? 'Open Ticket for User' : 'New Inquiry / Ticket'}</span>
+              </button>
+            )}
+            {isCreatingInquiry && (
+              <button
+                type="button"
+                onClick={() => setIsCreatingInquiry(false)}
+                className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition flex items-center space-x-1 cursor-pointer"
+              >
+                <X className="w-3.5 h-3.5" />
+                <span>Cancel</span>
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* New Ticket Form Panel */}
+        {isCreatingInquiry && (
+          <form onSubmit={(e) => handleCreateInquirySubmit(e, targetUser || currentSessionUser || undefined)} className="bg-slate-50 p-4 rounded-xl border border-sky-200 space-y-3">
+            <div className="flex items-center justify-between border-b border-slate-200 pb-2">
+              <span className="text-xs font-extrabold text-slate-800 uppercase tracking-wide flex items-center gap-1.5">
+                <MessageSquare className="w-3.5 h-3.5 text-sky-600" />
+                Create Support Ticket {targetUser ? `(${targetUser.fullName})` : currentSessionUser ? `(${currentSessionUser.fullName})` : ''}
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-[10px] font-bold text-slate-600 mb-1">Subject / Reference</label>
+                <input
+                  type="text"
+                  value={inquirySubject}
+                  onChange={(e) => setInquirySubject(e.target.value)}
+                  placeholder="e.g. Deposit #SEND-8922372 Receipt Verification"
+                  required
+                  className="w-full p-2 border border-slate-200 rounded-lg text-xs bg-white focus:outline-none focus:border-sky-500 font-medium text-slate-800"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-bold text-slate-600 mb-1">Category</label>
+                <select
+                  value={inquiryCategory}
+                  onChange={(e) => setInquiryCategory(e.target.value as any)}
+                  className="w-full p-2 border border-slate-200 rounded-lg text-xs bg-white focus:outline-none font-medium text-slate-800"
+                >
+                  <option value="Transaction Issue">Transaction Issue</option>
+                  <option value="Deposit Query">Deposit Query</option>
+                  <option value="Send Money Problem">Send Money Problem</option>
+                  <option value="Account / Security">Account / Security</option>
+                  <option value="General Inquiry">General Inquiry</option>
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-[10px] font-bold text-slate-600 mb-1">Detailed Inquiry Message</label>
+              <textarea
+                rows={3}
+                value={inquiryMessage}
+                onChange={(e) => setInquiryMessage(e.target.value)}
+                placeholder="Type your message or inquiry details..."
+                required
+                className="w-full p-2 border border-slate-200 rounded-lg text-xs bg-white focus:outline-none focus:border-sky-500 font-medium text-slate-800"
+              />
+            </div>
+
+            {/* File Attachment Upload */}
+            <div className="bg-white p-3 rounded-lg border border-slate-200 space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="block text-[10px] font-bold text-slate-700 flex items-center gap-1">
+                  <Paperclip className="w-3.5 h-3.5 text-sky-600" />
+                  Attach File / Document / Screenshot
+                </label>
+                <button
+                  type="button"
+                  onClick={() => handleAttachSampleReceipt(setInquiryFile)}
+                  className="text-[10px] font-bold text-sky-600 hover:text-sky-800 underline flex items-center gap-1 cursor-pointer"
+                >
+                  <ImageIcon className="w-3 h-3" />
+                  Attach Sample Receipt
+                </button>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <label className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-lg text-xs font-semibold text-slate-700 cursor-pointer flex items-center space-x-1.5 transition">
+                  <FileUp className="w-3.5 h-3.5 text-slate-600" />
+                  <span>Choose Attachment File</span>
+                  <input
+                    type="file"
+                    accept="image/*,.pdf,.doc,.docx,.txt"
+                    className="hidden"
+                    onChange={(e) => handleFileUpload(e, setInquiryFile)}
+                  />
+                </label>
+
+                {inquiryFile ? (
+                  <div className="flex items-center gap-2 px-2.5 py-1 bg-sky-50 border border-sky-200 rounded-lg text-xs">
+                    <Paperclip className="w-3 h-3 text-sky-600" />
+                    <span className="font-mono text-[10px] text-sky-900 font-bold truncate max-w-[180px]">
+                      {inquiryFile.name}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setInquiryFile(null)}
+                      className="text-red-500 hover:text-red-700 font-bold text-xs cursor-pointer"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ) : (
+                  <span className="text-[10px] text-slate-400 font-medium">No file selected (Max 5MB)</span>
+                )}
+              </div>
+
+              {inquiryFile && inquiryFile.dataUrl && (
+                <div className="mt-2 p-2 bg-slate-50 border border-slate-200 rounded-lg max-w-[280px]">
+                  <p className="text-[9px] font-bold text-slate-500 mb-1 uppercase">File Preview:</p>
+                  <img src={inquiryFile.dataUrl} alt="Attachment" className="max-h-24 w-auto rounded border border-slate-200 object-contain bg-white" />
+                </div>
+              )}
+            </div>
+
+            <div className="flex justify-end gap-2 pt-1">
+              <button
+                type="button"
+                onClick={() => setIsCreatingInquiry(false)}
+                className="px-3 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg text-xs font-bold cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="px-4 py-1.5 bg-sky-600 hover:bg-sky-700 text-white rounded-lg text-xs font-bold shadow-sm transition cursor-pointer"
+              >
+                Submit Ticket
+              </button>
+            </div>
+          </form>
+        )}
+
+        {/* Ticket Thread List & Message Area */}
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
+          {/* Left: Ticket Cards List */}
+          <div className="md:col-span-5 border-r border-slate-100 pr-0 md:pr-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider">
+                Submitted Tickets ({userInquiries.length})
+              </span>
+              <select
+                value={inquiryStatusFilter}
+                onChange={(e) => setInquiryStatusFilter(e.target.value as any)}
+                className="text-[10px] p-1 border border-slate-200 rounded-md bg-slate-50 font-bold text-slate-700"
+              >
+                <option value="all">All Statuses</option>
+                <option value="open">Open</option>
+                <option value="in_progress">In Progress</option>
+                <option value="resolved">Resolved</option>
+                <option value="closed">Closed</option>
+              </select>
+            </div>
+
+            <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
+              {filteredInquiries.map((inq) => {
+                const isSelected = inq.id === selectedInquiryId;
+                const hasAttachment = inq.messages.some(m => !!m.attachmentName);
+
+                return (
+                  <div
+                    key={inq.id}
+                    onClick={() => {
+                      setSelectedInquiryId(inq.id);
+                      setIsCreatingInquiry(false);
+                    }}
+                    className={`p-3 rounded-xl border transition-all cursor-pointer ${
+                      isSelected
+                        ? 'bg-sky-50 border-sky-300 shadow-sm'
+                        : 'bg-slate-50 hover:bg-slate-100/80 border-slate-200/80'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-1 mb-1">
+                      <span className="font-mono text-[10px] font-black text-sky-800 uppercase">
+                        #{inq.id}
+                      </span>
+                      <span className={`text-[8px] font-extrabold px-1.5 py-0.2 rounded-full border uppercase ${
+                        inq.status === 'open' ? 'bg-amber-100 text-amber-800 border-amber-200' :
+                        inq.status === 'in_progress' ? 'bg-sky-100 text-sky-800 border-sky-200' :
+                        inq.status === 'resolved' ? 'bg-emerald-100 text-emerald-800 border-emerald-200' :
+                        'bg-slate-200 text-slate-700 border-slate-300'
+                      }`}>
+                        {inq.status.replace('_', ' ')}
+                      </span>
+                    </div>
+
+                    <h4 className="text-xs font-bold text-slate-900 truncate mb-1">{inq.subject}</h4>
+                    
+                    {isAdminView && (
+                      <p className="text-[10px] font-bold text-sky-800 truncate mb-1 bg-sky-100/70 px-1.5 py-0.5 rounded border border-sky-200/60 w-max">
+                        👤 {inq.userName} ({inq.userMobile})
+                      </p>
+                    )}
+                    
+                    <div className="flex items-center justify-between text-[9px] text-slate-500">
+                      <span className="bg-slate-200/60 px-1.5 py-0.2 rounded font-medium">{inq.category}</span>
+                      <span className="font-mono">{inq.updatedAt.slice(5, 16)}</span>
+                    </div>
+
+                    {hasAttachment && (
+                      <div className="mt-1.5 flex items-center gap-1 text-[9px] text-sky-700 font-bold">
+                        <Paperclip className="w-3 h-3 text-sky-600" />
+                        <span>Attached Document/File</span>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+
+              {filteredInquiries.length === 0 && (
+                <div className="p-6 text-center text-slate-400 space-y-1">
+                  <HelpCircle className="w-6 h-6 mx-auto text-slate-300" />
+                  <p className="text-xs font-medium">No tickets found.</p>
+                  <p className="text-[10px]">Click "New Inquiry / Ticket" to submit a question with file attachment.</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Right: Selected Ticket Messages & Reply Form */}
+          <div className="md:col-span-7 space-y-3 bg-slate-50/50 p-3.5 rounded-xl border border-slate-200/80">
+            {selectedInquiry ? (
+              <div className="space-y-3">
+                {/* Header info */}
+                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 pb-2">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono text-xs font-black text-sky-700">#{selectedInquiry.id}</span>
+                      <span className="text-xs font-bold text-slate-900">{selectedInquiry.subject}</span>
+                    </div>
+                    <p className="text-[10px] text-slate-500">
+                      User: <strong className="text-slate-800">{selectedInquiry.userName}</strong> ({selectedInquiry.userMobile}) | Category: <strong>{selectedInquiry.category}</strong>
+                    </p>
+                  </div>
+
+                  {isAdminView && (
+                    <div className="flex items-center gap-1">
+                      <span className="text-[10px] font-bold text-slate-500">Status:</span>
+                      <select
+                        value={selectedInquiry.status}
+                        onChange={(e) => handleUpdateInquiryStatus(selectedInquiry.id, e.target.value as any)}
+                        className="text-[10px] font-extrabold p-1 rounded border border-slate-300 bg-white text-slate-800"
+                      >
+                        <option value="open">Open</option>
+                        <option value="in_progress">In Progress</option>
+                        <option value="resolved">Resolved</option>
+                        <option value="closed">Closed</option>
+                      </select>
+                    </div>
+                  )}
+                </div>
+
+                {/* Messages stream */}
+                <div className="space-y-3 max-h-[220px] overflow-y-auto pr-1">
+                  {selectedInquiry.messages.map((msg) => {
+                    const isAdminMsg = msg.senderRole === 'admin';
+                    return (
+                      <div
+                        key={msg.id}
+                        className={`p-3 rounded-xl border max-w-[90%] text-xs space-y-1 ${
+                          isAdminMsg
+                            ? 'bg-indigo-50/90 border-indigo-200 ml-auto text-left'
+                            : 'bg-white border-slate-200 mr-auto text-left'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between gap-2 border-b border-slate-100/60 pb-1">
+                          <span className={`font-bold text-[10px] ${isAdminMsg ? 'text-indigo-800' : 'text-slate-800'}`}>
+                            {msg.senderName} ({isAdminMsg ? 'Admin' : 'Client'})
+                          </span>
+                          <span className="text-[8px] text-slate-400 font-mono">{msg.createdAt}</span>
+                        </div>
+
+                        <p className="text-slate-800 leading-relaxed font-medium whitespace-pre-wrap">{msg.message}</p>
+
+                        {/* File Attachment Chip */}
+                        {msg.attachmentName && (
+                          <div className="mt-2 p-2 bg-slate-100/80 rounded-lg border border-slate-200 flex flex-col gap-1.5">
+                            <div className="flex items-center justify-between gap-2">
+                              <div className="flex items-center space-x-1.5 truncate">
+                                <Paperclip className="w-3.5 h-3.5 text-sky-600 flex-shrink-0" />
+                                <span className="text-[10px] font-bold text-slate-800 font-mono truncate">
+                                  {msg.attachmentName}
+                                </span>
+                              </div>
+                              {msg.attachmentDataUrl && (
+                                <a
+                                  href={msg.attachmentDataUrl}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  download={msg.attachmentName}
+                                  className="px-2 py-0.5 bg-sky-600 hover:bg-sky-700 text-white rounded text-[9px] font-bold flex items-center gap-1 transition cursor-pointer"
+                                >
+                                  <Download className="w-2.5 h-2.5" />
+                                  <span>Download</span>
+                                </a>
+                              )}
+                            </div>
+
+                            {msg.attachmentDataUrl && msg.attachmentDataUrl.startsWith('data:image') && (
+                              <img
+                                src={msg.attachmentDataUrl}
+                                alt="Attachment preview"
+                                className="max-h-28 w-auto rounded border border-slate-200 object-contain bg-white"
+                              />
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Reply Form */}
+                {selectedInquiry.status !== 'closed' ? (
+                  <form onSubmit={(e) => handleReplyInquirySubmit(e, selectedInquiry.id)} className="space-y-2 pt-2 border-t border-slate-200">
+                    <div className="flex items-center justify-between text-[10px] font-bold text-slate-600">
+                      <span>Post Reply to Ticket #{selectedInquiry.id}:</span>
+                      <button
+                        type="button"
+                        onClick={() => handleAttachSampleReceipt(setReplyFile)}
+                        className="text-sky-600 hover:text-sky-800 underline flex items-center gap-1 cursor-pointer"
+                      >
+                        <ImageIcon className="w-3 h-3" />
+                        Attach Receipt
+                      </button>
+                    </div>
+
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={replyMessage}
+                        onChange={(e) => setReplyMessage(e.target.value)}
+                        placeholder={isAdminView ? "Type admin reply..." : "Type response..."}
+                        className="flex-grow p-2 border border-slate-200 rounded-lg text-xs bg-white focus:outline-none focus:border-sky-500 font-medium text-slate-800"
+                      />
+
+                      <label className="p-2 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-lg text-slate-700 cursor-pointer transition flex items-center justify-center" title="Attach file">
+                        <Paperclip className="w-4 h-4 text-slate-600" />
+                        <input
+                          type="file"
+                          accept="image/*,.pdf,.doc,.docx,.txt"
+                          className="hidden"
+                          onChange={(e) => handleFileUpload(e, setReplyFile)}
+                        />
+                      </label>
+
+                      <button
+                        type="submit"
+                        className="px-3.5 py-2 bg-sky-600 hover:bg-sky-700 text-white rounded-lg text-xs font-bold transition flex items-center space-x-1 cursor-pointer"
+                      >
+                        <SendHorizontal className="w-3.5 h-3.5" />
+                        <span>Send</span>
+                      </button>
+                    </div>
+
+                    {replyFile && (
+                      <div className="flex items-center gap-2 px-2.5 py-1 bg-sky-50 border border-sky-200 rounded-lg text-xs w-max">
+                        <Paperclip className="w-3 h-3 text-sky-600" />
+                        <span className="font-mono text-[10px] text-sky-900 font-bold max-w-[180px] truncate">
+                          Attached: {replyFile.name}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setReplyFile(null)}
+                          className="text-red-500 hover:text-red-700 font-bold text-xs cursor-pointer"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    )}
+                  </form>
+                ) : (
+                  <div className="p-2 bg-slate-200/60 rounded-lg text-center text-[10px] font-bold text-slate-600">
+                    This ticket is closed. Change status to reopen.
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="py-12 text-center text-slate-400 space-y-2">
+                <MessageCircle className="w-8 h-8 mx-auto text-slate-300" />
+                <p className="text-xs font-semibold">Select a ticket from the left panel to inspect messages and reply with file attachments.</p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className="bg-white/80 backdrop-blur-lg rounded-2xl border border-slate-200/60 shadow-xl overflow-hidden flex flex-col min-h-[720px] relative" id="simulation-frame">
@@ -1743,11 +2978,15 @@ export default function LiveSimulation() {
         </div>
       </div>
 
-      {/* Simulator Navigation Header matching the High Density theme spec */}
+      {/* Website Navigation Header */}
       <header className="bg-blue-900/95 backdrop-blur-md text-white shadow-md sticky top-0 z-10 border-b border-blue-800/35">
         <div className="max-w-7xl mx-auto px-4 sm:px-5 py-3 flex justify-between items-center">
-          <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 bg-emerald-500 rounded flex items-center justify-center font-bold text-white">
+          <div 
+            onClick={() => setActivePage('home')}
+            className="flex items-center space-x-3 cursor-pointer group"
+            title="Mashud Telecom Homepage"
+          >
+            <div className="w-8 h-8 bg-emerald-500 rounded flex items-center justify-center font-bold text-white shadow-sm group-hover:scale-105 transition">
               <span>M</span>
             </div>
             <div className="text-left">
@@ -1780,9 +3019,9 @@ export default function LiveSimulation() {
             ) : (
               <button 
                 onClick={() => setActivePage('user-login')} 
-                className="bg-sky-600 hover:bg-sky-700 text-white text-xs font-semibold px-4 py-2 rounded-lg transition duration-150 cursor-pointer"
+                className="bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold px-3.5 py-1.5 rounded-lg transition duration-150 cursor-pointer shadow-sm"
               >
-                Access Portal
+                Sign In
               </button>
             )}
           </div>
@@ -2116,7 +3355,10 @@ export default function LiveSimulation() {
                     }}
                     className="p-2 border border-slate-200 hover:border-sky-500 hover:bg-sky-50/50 rounded-lg text-left transition cursor-pointer"
                   >
-                    <span className="font-bold block text-slate-900">Masud Alam (User)</span>
+                    <div className="flex items-center justify-between gap-1">
+                      <span className="font-bold block text-slate-900">Masud Alam (User)</span>
+                      <span className="text-[8px] px-1 py-0.2 bg-emerald-100 text-emerald-800 font-extrabold rounded uppercase">Active</span>
+                    </div>
                     <span className="text-slate-500 font-mono">masud@gmail.com</span>
                     <span className="text-[9px] block text-sky-600 font-bold mt-0.5">Click to Autofill</span>
                   </button>
@@ -2441,7 +3683,13 @@ export default function LiveSimulation() {
             {/* Header toolbar */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-slate-200 pb-4 gap-4">
               <div>
-                <h1 className="text-2xl font-bold text-slate-900 font-sans tracking-tight">Welcome, {currentSessionUser.fullName}</h1>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h1 className="text-2xl font-bold text-slate-900 font-sans tracking-tight">Welcome, {currentSessionUser.fullName}</h1>
+                  <span className="bg-emerald-100 text-emerald-800 text-[10px] font-extrabold px-2.5 py-0.5 rounded-full border border-emerald-200 flex items-center gap-1 shadow-2xs">
+                    <CheckCircle className="w-3 h-3 text-emerald-600" />
+                    Verified User
+                  </span>
+                </div>
                 <div className="flex flex-wrap items-center gap-x-2 text-[11px] text-slate-500 mt-1">
                   <span className="font-bold text-slate-700">ID:</span> #MT-{currentSessionUser.id.toUpperCase().split('-')[1] || '89042'}
                   <span className="text-slate-300">|</span>
@@ -2450,7 +3698,262 @@ export default function LiveSimulation() {
                   <span className="font-bold text-slate-700">Email:</span> {currentSessionUser.email}
                 </div>
               </div>
+
               <div className="flex flex-wrap items-center gap-3">
+                {/* NOTIFICATION MENU DROPDOWN */}
+                {(() => {
+                  const userNotifs = notifications.filter(n => n.userId === currentSessionUser.id || n.userId === 'all');
+                  const unreadCount = userNotifs.filter(n => !n.isRead).length;
+
+                  return (
+                    <div className="relative">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsNotificationDropdownOpen(!isNotificationDropdownOpen);
+                          setIsProfileDropdownOpen(false);
+                        }}
+                        className="relative p-2.5 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-xl shadow-xs transition flex items-center justify-center cursor-pointer active:scale-95"
+                        title="Notifications Menu"
+                      >
+                        <BellRing className={`w-5 h-5 ${unreadCount > 0 ? 'text-blue-600 animate-bounce' : 'text-slate-600'}`} />
+                        {unreadCount > 0 && (
+                          <span className="absolute -top-1 -right-1 bg-rose-600 text-white text-[10px] font-black min-w-[20px] h-[20px] px-1 rounded-full flex items-center justify-center border-2 border-white shadow-sm">
+                            {unreadCount > 99 ? '99+' : unreadCount}
+                          </span>
+                        )}
+                      </button>
+
+                      {/* Dropdown Box */}
+                      {isNotificationDropdownOpen && (
+                        <>
+                          <div className="fixed inset-0 z-30" onClick={() => setIsNotificationDropdownOpen(false)} />
+                          <div className="absolute right-0 mt-2 w-80 md:w-96 bg-white rounded-2xl shadow-2xl border border-slate-200 z-40 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150">
+                            <div className="p-3.5 bg-slate-900 text-white flex items-center justify-between">
+                              <div className="flex items-center space-x-2">
+                                <BellRing className="w-4 h-4 text-sky-400" />
+                                <span className="font-bold text-xs uppercase tracking-wider">Notifications Menu</span>
+                                {unreadCount > 0 && (
+                                  <span className="bg-rose-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+                                    {unreadCount} New
+                                  </span>
+                                )}
+                              </div>
+                              <div className="flex items-center space-x-1">
+                                {userNotifs.length > 0 && (
+                                  <>
+                                    <button
+                                      type="button"
+                                      onClick={handleMarkAllNotificationsAsRead}
+                                      className="text-[10px] font-semibold text-sky-300 hover:text-white px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 transition cursor-pointer"
+                                      title="Mark all as read"
+                                    >
+                                      Mark all read
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={handleClearUserNotifications}
+                                      className="p-1 text-slate-400 hover:text-rose-300 rounded hover:bg-slate-800 transition cursor-pointer"
+                                      title="Clear notifications"
+                                    >
+                                      <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
+                                  </>
+                                )}
+                                <button
+                                  type="button"
+                                  onClick={() => setIsNotificationDropdownOpen(false)}
+                                  className="p-1 text-slate-400 hover:text-white rounded hover:bg-slate-800 transition cursor-pointer"
+                                >
+                                  <X className="w-4 h-4" />
+                                </button>
+                              </div>
+                            </div>
+
+                            <div className="max-h-80 overflow-y-auto divide-y divide-slate-100">
+                              {userNotifs.length === 0 ? (
+                                <div className="p-8 text-center text-slate-400 space-y-1">
+                                  <BellRing className="w-8 h-8 text-slate-300 mx-auto opacity-50" />
+                                  <p className="text-xs font-semibold">No notifications available</p>
+                                  <p className="text-[10px] text-slate-400">Transaction updates and notices will appear here.</p>
+                                </div>
+                              ) : (
+                                userNotifs.map(n => (
+                                  <div
+                                    key={n.id}
+                                    onClick={() => handleNotificationClick(n)}
+                                    className={`p-3 transition cursor-pointer flex items-start space-x-3 hover:bg-slate-50 ${
+                                      !n.isRead ? 'bg-sky-50/70 border-l-4 border-l-sky-500' : 'bg-white'
+                                    }`}
+                                  >
+                                    <div className={`p-2 rounded-xl flex-shrink-0 mt-0.5 ${
+                                      n.title.toLowerCase().includes('approved') ? 'bg-emerald-100 text-emerald-700' :
+                                      n.title.toLowerCase().includes('reject') || n.title.toLowerCase().includes('denied') ? 'bg-rose-100 text-rose-700' :
+                                      'bg-blue-100 text-blue-700'
+                                    }`}>
+                                      {n.title.toLowerCase().includes('approved') ? <CheckCircle className="w-4 h-4" /> :
+                                       n.title.toLowerCase().includes('reject') ? <XCircle className="w-4 h-4" /> :
+                                       <Info className="w-4 h-4" />}
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                      <div className="flex items-center justify-between">
+                                        <h4 className="text-xs font-bold text-slate-900 truncate">{n.title}</h4>
+                                        {!n.isRead && (
+                                          <span className="w-2 h-2 rounded-full bg-sky-600 flex-shrink-0 ml-1" />
+                                        )}
+                                      </div>
+                                      <p className="text-[11px] text-slate-600 mt-0.5 leading-snug">{n.message}</p>
+                                      <span className="text-[9px] text-slate-400 font-mono mt-1 block">{n.createdAt}</span>
+                                    </div>
+                                  </div>
+                                ))
+                              )}
+                            </div>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  );
+                })()}
+
+                {/* USER PROFILE MENU DROPDOWN */}
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsProfileDropdownOpen(!isProfileDropdownOpen);
+                      setIsNotificationDropdownOpen(false);
+                    }}
+                    className="p-1.5 pl-2.5 bg-white hover:bg-slate-100 text-slate-800 border border-slate-200 rounded-xl shadow-xs transition flex items-center space-x-2.5 cursor-pointer active:scale-95"
+                    title="User Profile Menu"
+                  >
+                    <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-blue-600 to-indigo-700 text-white font-black flex items-center justify-center text-xs shadow-xs">
+                      {currentSessionUser.fullName.charAt(0).toUpperCase()}
+                    </div>
+                    <div className="text-left hidden sm:block">
+                      <span className="block text-xs font-bold text-slate-900 leading-none">{currentSessionUser.fullName}</span>
+                      <span className="text-[9px] font-semibold text-emerald-600 uppercase tracking-wider leading-tight">Profile Menu</span>
+                    </div>
+                    <ChevronDown className="w-4 h-4 text-slate-400" />
+                  </button>
+
+                  {/* Profile Dropdown Menu */}
+                  {isProfileDropdownOpen && (
+                    <>
+                      <div className="fixed inset-0 z-30" onClick={() => setIsProfileDropdownOpen(false)} />
+                      <div className="absolute right-0 mt-2 w-72 bg-white rounded-2xl shadow-2xl border border-slate-200 z-40 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150">
+                        {/* Header */}
+                        <div className="p-4 bg-gradient-to-br from-slate-900 to-indigo-950 text-white space-y-3">
+                          <div className="flex items-center space-x-3">
+                            <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-blue-500 to-indigo-500 text-white font-black text-lg flex items-center justify-center shadow-md border border-white/20">
+                              {currentSessionUser.fullName.charAt(0).toUpperCase()}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <h3 className="font-bold text-sm text-white truncate">{currentSessionUser.fullName}</h3>
+                              <span className="inline-block text-[9px] bg-emerald-500/20 text-emerald-300 font-bold px-2 py-0.2 rounded-full border border-emerald-500/30">
+                                ✓ Verified Active Profile
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-2 text-[10px] bg-white/10 p-2.5 rounded-xl backdrop-blur-xs">
+                            <div>
+                              <span className="text-slate-400 block text-[8px] uppercase">User ID</span>
+                              <span className="font-mono font-bold text-sky-200">#MT-{currentSessionUser.id.toUpperCase().split('-')[1] || '89042'}</span>
+                            </div>
+                            <div>
+                              <span className="text-slate-400 block text-[8px] uppercase">Wallet Balance</span>
+                              <span className="font-mono font-bold text-emerald-300">৳ {currentSessionUser.balance.toFixed(2)}</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Menu options */}
+                        <div className="p-2 space-y-1">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setIsProfileDropdownOpen(false);
+                              handleOpenProfileModal();
+                            }}
+                            className="w-full text-left px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 rounded-xl transition flex items-center space-x-2.5 cursor-pointer"
+                          >
+                            <User className="w-4 h-4 text-blue-600" />
+                            <span>View Profile Details</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setIsProfileDropdownOpen(false);
+                              setIsChangePasswordModalOpen(true);
+                            }}
+                            className="w-full text-left px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 rounded-xl transition flex items-center space-x-2.5 cursor-pointer"
+                          >
+                            <Lock className="w-4 h-4 text-amber-600" />
+                            <span>Change Security Password</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setIsProfileDropdownOpen(false);
+                              handleDownloadPDFStatement(
+                                currentSessionUser,
+                                transactions.filter(t => t.userId === currentSessionUser.id),
+                                userCommissionMultiplier
+                              );
+                            }}
+                            className="w-full text-left px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 rounded-xl transition flex items-center space-x-2.5 cursor-pointer"
+                          >
+                            <FileText className="w-4 h-4 text-emerald-600" />
+                            <span>Download e-Statement PDF</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setIsProfileDropdownOpen(false);
+                              setActivePage('user-inquiries');
+                            }}
+                            className="w-full text-left px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 rounded-xl transition flex items-center space-x-2.5 cursor-pointer"
+                          >
+                            <MessageSquare className="w-4 h-4 text-violet-600" />
+                            <span>Support & Help Tickets</span>
+                          </button>
+
+                          <div className="pt-1 border-t border-slate-100 mt-1">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setIsProfileDropdownOpen(false);
+                                setCurrentSessionUser(null);
+                                setActivePage('home');
+                                setSimAlert({ type: 'info', message: 'Signed out successfully.' });
+                              }}
+                              className="w-full text-left px-3 py-2 text-xs font-semibold text-rose-600 hover:bg-rose-50 rounded-xl transition flex items-center space-x-2.5 cursor-pointer"
+                            >
+                              <LogOut className="w-4 h-4 text-rose-600" />
+                              <span>Sign Out</span>
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
+
+                {/* Today Total Send & Debit High-Density Header Widget */}
+                <div className="px-4 py-2 rounded-xl shadow-md flex items-center space-x-3 border bg-gradient-to-r from-rose-600 to-orange-600 border-rose-500/30 text-white">
+                  <TrendingDown className="w-5 h-5 text-rose-200" />
+                  <div>
+                    <span className="block text-[8px] uppercase tracking-wider font-extrabold text-rose-200 leading-none">
+                      Today total send and Debit
+                    </span>
+                    <span className="text-sm font-black tracking-tight leading-none">৳ {todayUserSendAndDebitTotalSum.toFixed(2)}</span>
+                  </div>
+                </div>
+
                 {/* Available Balance High-Density Header Widget */}
                 <div className={`px-4 py-2 rounded-xl shadow-md flex items-center space-x-3 border ${
                   currentSessionUser.balance < 0 
@@ -2465,21 +3968,6 @@ export default function LiveSimulation() {
                     <span className="text-sm font-black tracking-tight leading-none">৳ {currentSessionUser.balance.toFixed(2)}</span>
                   </div>
                 </div>
-
-                <button 
-                  onClick={() => setReportType('pdf')}
-                  className="bg-red-50 hover:bg-red-100 text-red-700 text-[10px] font-bold py-2 px-3 border border-red-200 rounded-lg flex items-center space-x-1 transition cursor-pointer"
-                >
-                  <FileText className="w-3.5 h-3.5" />
-                  <span>Download PDF Report</span>
-                </button>
-                <button 
-                  onClick={() => setReportType('excel')}
-                  className="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-[10px] font-bold py-2 px-3 border border-emerald-200 rounded-lg flex items-center space-x-1 transition cursor-pointer"
-                >
-                  <FileSpreadsheet className="w-3.5 h-3.5" />
-                  <span>Download Excel Sheet</span>
-                </button>
               </div>
             </div>
 
@@ -2600,15 +4088,31 @@ export default function LiveSimulation() {
                     <Coins className="w-5 h-5" />
                   </div>
                 </div>
-                {userCommission > 0 && (
-                  <button
-                    onClick={handleClaimCommission}
-                    className="mt-2 w-full py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-[10px] font-bold rounded-lg shadow-sm transition flex items-center justify-center space-x-1 cursor-pointer"
-                  >
-                    <Coins className="w-3.5 h-3.5" />
-                    <span>Claim ৳ {userCommission.toFixed(2)} to Balance</span>
-                  </button>
-                )}
+              </div>
+
+              {/* Card 6: Today Total Send and Debit */}
+              <div className="bg-gradient-to-br from-rose-50 to-orange-50 p-5 rounded-2xl border border-rose-200 flex flex-col justify-between shadow-sm min-h-[120px]">
+                <div className="flex items-start justify-between">
+                  <div className="space-y-1 min-w-0 flex-1">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="text-rose-700 text-[9px] uppercase tracking-wider font-extrabold block truncate">
+                        Today total send and Debit
+                      </span>
+                      <span className="text-[8px] bg-rose-100 text-rose-800 font-bold px-1.5 py-0.2 rounded-full border border-rose-200">
+                        Asia/Dhaka
+                      </span>
+                    </div>
+                    <div className="text-xl font-black text-rose-700 font-sans truncate">
+                      ৳ {todayUserSendAndDebitTotalSum.toFixed(2)}
+                    </div>
+                    <p className="text-[10px] text-slate-500 truncate">
+                      Date: {getFormattedTodayBDDate()} | Approved: ৳{todayUserSendAndDebitApprovedSum.toFixed(2)}
+                    </p>
+                  </div>
+                  <div className="bg-rose-100 text-rose-600 p-2.5 rounded-xl flex-shrink-0 ml-3">
+                    <TrendingDown className="w-5 h-5" />
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -2616,110 +4120,245 @@ export default function LiveSimulation() {
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
               
               {/* Request Forms */}
-              <div className="lg:col-span-7 space-y-6">
+              <div className="lg:col-span-12 space-y-6">
                 
-                {/* Send Money Form */}
-                <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-4">
-                  <div className="flex items-center space-x-2">
-                    <Send className="w-4 h-4 text-emerald-600" />
-                    <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider">Send Money</h3>
+                {/* Side-by-Side Forms Container */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Send Money Form */}
+                  <div id="send-money-form" className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-4">
+                    <div className="flex items-center space-x-2">
+                      <Send className="w-4 h-4 text-emerald-600" />
+                      <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider">Send Money</h3>
+                    </div>
+
+                    <form onSubmit={handleSendMoneySubmit} className="space-y-3">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <div>
+                          <label className="block text-[10px] font-bold text-slate-600 mb-0.5">Recipient Mobile</label>
+                          <input 
+                            id="send-recipient-input"
+                            type="tel" 
+                            value={sendRecipient}
+                            onChange={(e) => setSendRecipient(e.target.value)}
+                            required 
+                            className="w-full p-2 border border-slate-200 rounded-lg text-xs bg-slate-50 focus:outline-none font-medium focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500" 
+                            placeholder="e.g. +8801..." 
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[10px] font-bold text-slate-600 mb-0.5">Amount (TK)</label>
+                          <input 
+                            type="number" 
+                            value={sendAmount}
+                            onChange={(e) => setSendAmount(e.target.value)}
+                            required 
+                            className="w-full p-2 border border-slate-200 rounded-lg text-xs bg-slate-50 focus:outline-none font-medium" 
+                            placeholder="e.g. 200" 
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[10px] font-bold text-slate-600 mb-0.5">Way</label>
+                          <select 
+                            value={sendWay}
+                            onChange={(e) => setSendWay(e.target.value)}
+                            className="w-full p-2 border border-slate-200 rounded-lg text-xs bg-slate-50 focus:outline-none font-medium"
+                          >
+                            <option value="bkash">bkash</option>
+                            <option value="Nagad">Nagad</option>
+                            <option value="Roket">Roket</option>
+                            <option value="Flexi">Flexi</option>
+                            <option value="Other">Other</option>
+                          </select>
+                        </div>
+                      </div>
+                      <button type="submit" className="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-lg shadow transition cursor-pointer">
+                        Initiate Transfer Request
+                      </button>
+                    </form>
                   </div>
 
-                  <form onSubmit={handleSendMoneySubmit} className="space-y-3">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                      <div>
-                        <label className="block text-[10px] font-bold text-slate-600 mb-0.5">Recipient Mobile</label>
-                        <input 
-                          type="tel" 
-                          value={sendRecipient}
-                          onChange={(e) => setSendRecipient(e.target.value)}
-                          required 
-                          className="w-full p-2 border border-slate-200 rounded-lg text-xs bg-slate-50 focus:outline-none font-medium" 
-                          placeholder="e.g. +8801..." 
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-[10px] font-bold text-slate-600 mb-0.5">Amount (TK)</label>
-                        <input 
-                          type="number" 
-                          value={sendAmount}
-                          onChange={(e) => setSendAmount(e.target.value)}
-                          required 
-                          className="w-full p-2 border border-slate-200 rounded-lg text-xs bg-slate-50 focus:outline-none font-medium" 
-                          placeholder="e.g. 200" 
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-[10px] font-bold text-slate-600 mb-0.5">Way</label>
-                        <select 
-                          value={sendWay}
-                          onChange={(e) => setSendWay(e.target.value)}
-                          className="w-full p-2 border border-slate-200 rounded-lg text-xs bg-slate-50 focus:outline-none font-medium"
-                        >
-                          <option value="bkash">bkash</option>
-                          <option value="Nagad">Nagad</option>
-                          <option value="Roket">Roket</option>
-                          <option value="Flexi">Flexi</option>
-                          <option value="Other">Other</option>
-                        </select>
-                      </div>
+                  {/* Deposit Request Form */}
+                  <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-4">
+                    <div className="flex items-center space-x-2">
+                      <Banknote className="w-5 h-5 text-sky-600" />
+                      <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider">Deposit Request</h3>
                     </div>
-                    <button type="submit" className="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-lg shadow transition cursor-pointer">
-                      Initiate Transfer Request
-                    </button>
-                  </form>
+
+                    <form onSubmit={handleDepositSubmit} className="space-y-3">
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-[10px] font-bold text-slate-600 mb-0.5">Deposit Amount (TK)</label>
+                          <input 
+                            type="number" 
+                            value={depositAmount}
+                            onChange={(e) => setDepositAmount(e.target.value)}
+                            required 
+                            className="w-full p-2 border border-slate-200 rounded-lg text-xs bg-slate-50 focus:outline-none" 
+                            placeholder="e.g. 500" 
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[10px] font-bold text-slate-600 mb-0.5">Payment Method</label>
+                          <select 
+                            value={depositMethod}
+                            onChange={(e) => setDepositMethod(e.target.value)}
+                            className="w-full p-2 border border-slate-200 rounded-lg text-xs bg-slate-50 focus:outline-none font-medium"
+                          >
+                            <option value="By Bank">By Bank</option>
+                            <option value="By Cash-hand">By Cash-hand</option>
+                            <option value="bKash Personal">bKash Personal</option>
+                            <option value="Nagad Personal">Nagad Personal</option>
+                            <option value="Rocket Agent">Rocket Agent</option>
+                          </select>
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-bold text-slate-600 mb-0.5">TxnID / Reference Code</label>
+                        <input 
+                          type="text" 
+                          value={depositRef}
+                          onChange={(e) => setDepositRef(e.target.value)}
+                          required 
+                          className="w-full p-2 border border-slate-200 rounded-lg text-xs bg-slate-50 font-mono focus:outline-none" 
+                          placeholder="TRK9012498" 
+                        />
+                      </div>
+                      <button type="submit" className="w-full py-2 bg-sky-600 hover:bg-sky-700 text-white text-xs font-semibold rounded-lg shadow transition cursor-pointer">
+                        Submit Pending Deposit
+                      </button>
+                    </form>
+                  </div>
                 </div>
 
-                {/* Deposit Request Form */}
-                <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-4">
-                  <div className="flex items-center space-x-2">
-                    <Banknote className="w-5 h-5 text-sky-600" />
-                    <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider">Submit Wallet Deposit Request</h3>
+                {/* Dedicated Table: Today total send and Debit */}
+                <div className="bg-white rounded-2xl p-5 border border-rose-200 shadow-sm space-y-4 text-left">
+                  <div className="flex flex-wrap items-center justify-between gap-3 border-b border-rose-100 pb-3">
+                    <div className="flex items-center space-x-2">
+                      <div className="p-2 bg-rose-100 text-rose-700 rounded-xl">
+                        <TrendingDown className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider">Today total send and Debit</h3>
+                        <p className="text-[10px] text-slate-500 font-medium">
+                          Current Date (Asia/Dhaka): <strong className="text-slate-800 font-bold">{getFormattedTodayBDDate()}</strong>
+                        </p>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center gap-2">
+                      <div className="px-3 py-1 bg-rose-50 border border-rose-200 rounded-xl text-[11px] font-extrabold text-rose-800">
+                        Today Total: ৳ {todayUserSendAndDebitTotalSum.toFixed(2)}
+                      </div>
+                      <div className="px-3 py-1 bg-emerald-50 border border-emerald-200 rounded-xl text-[11px] font-extrabold text-emerald-800">
+                        Approved: ৳ {todayUserSendAndDebitApprovedSum.toFixed(2)}
+                      </div>
+                    </div>
                   </div>
 
-                  <form onSubmit={handleDepositSubmit} className="space-y-3">
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label className="block text-[10px] font-bold text-slate-600 mb-0.5">Deposit Amount (TK)</label>
-                        <input 
-                          type="number" 
-                          value={depositAmount}
-                          onChange={(e) => setDepositAmount(e.target.value)}
-                          required 
-                          className="w-full p-2 border border-slate-200 rounded-lg text-xs bg-slate-50 focus:outline-none" 
-                          placeholder="e.g. 500" 
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-[10px] font-bold text-slate-600 mb-0.5">Payment Method</label>
-                        <select 
-                          value={depositMethod}
-                          onChange={(e) => setDepositMethod(e.target.value)}
-                          className="w-full p-2 border border-slate-200 rounded-lg text-xs bg-slate-50 focus:outline-none font-medium"
-                        >
-                          <option value="By Bank">By Bank</option>
-                          <option value="By Cash-hand">By Cash-hand</option>
-                          <option value="bKash Personal">bKash Personal</option>
-                          <option value="Nagad Personal">Nagad Personal</option>
-                          <option value="Rocket Agent">Rocket Agent</option>
-                        </select>
-                      </div>
-                    </div>
-                    <div>
-                      <label className="block text-[10px] font-bold text-slate-600 mb-0.5">TxnID / Reference Code</label>
-                      <input 
-                        type="text" 
-                        value={depositRef}
-                        onChange={(e) => setDepositRef(e.target.value)}
-                        required 
-                        className="w-full p-2 border border-slate-200 rounded-lg text-xs bg-slate-50 font-mono focus:outline-none" 
-                        placeholder="TRK9012498" 
-                      />
-                    </div>
-                    <button type="submit" className="w-full py-2 bg-sky-600 hover:bg-sky-700 text-white text-xs font-semibold rounded-lg shadow transition cursor-pointer">
-                      Submit Pending Deposit
-                    </button>
-                  </form>
+                  {/* Table of Today's Send and Debit Transactions */}
+                  <div className="overflow-x-auto">
+                    <table className="w-full divide-y divide-slate-200 text-left text-xs">
+                      <thead>
+                        <tr className="text-slate-400 uppercase font-semibold text-[10px] bg-slate-50">
+                          <th className="py-2.5 px-3">Reference ID</th>
+                          <th className="py-2.5 px-3">Type</th>
+                          <th className="py-2.5 px-3">Recipient / Mobile</th>
+                          <th className="py-2.5 px-3">Way</th>
+                          <th className="py-2.5 px-3 text-right">Debit Amount (TK)</th>
+                          <th className="py-2.5 px-3">Status</th>
+                          <th className="py-2.5 px-3">Receipt</th>
+                          <th className="py-2.5 px-3">Date & Time</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
+                        {todayUserSendAndDebitTxns.map((t, idx) => {
+                          const isCommissionCharge = t.recipient === 'System Commission Charge' || t.type === 'commission' || (t.referenceNo && t.referenceNo.startsWith('COM-'));
+                          return (
+                            <tr key={`today-debit-row-${t.id}-${idx}`} className="hover:bg-rose-50/40 transition-colors">
+                              <td className="py-2.5 px-3 font-mono text-[10px] text-slate-800 font-bold">{t.referenceNo}</td>
+                              <td className="py-2.5 px-3">
+                                {isCommissionCharge ? (
+                                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold bg-amber-100 text-amber-800 border border-amber-200">
+                                    Commission Fee
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold bg-rose-100 text-rose-800 border border-rose-200">
+                                    Send Money
+                                  </span>
+                                )}
+                              </td>
+                              <td className="py-2.5 px-3 font-mono text-slate-600">{t.recipient || t.userMobile || '-'}</td>
+                              <td className="py-2.5 px-3 font-semibold text-indigo-600 uppercase">{t.way || 'bkash'}</td>
+                              <td className="py-2.5 px-3 text-right font-black text-rose-700 font-mono text-sm">
+                                {t.status === 'rejected' ? '- ৳ 0000 (0.00)' : `- ৳ ${t.amount.toFixed(2)}`}
+                              </td>
+                              <td className="py-2.5 px-3">
+                                {t.status === 'approved' ? (
+                                  <div className="flex flex-col items-start gap-1">
+                                    <span className="inline-flex px-2 py-0.5 bg-emerald-100 text-emerald-800 text-[9px] font-bold rounded-full border border-emerald-200">
+                                      Approved
+                                    </span>
+                                    <span className="text-[9px] font-mono font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-200">
+                                      PIN: {t.authPin || '123456'}
+                                    </span>
+                                  </div>
+                                ) : t.status === 'rejected' ? (
+                                  <span className="inline-flex px-2 py-0.5 bg-red-100 text-red-800 text-[9px] font-bold rounded-full border border-red-200">
+                                    Rejected
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex px-2 py-0.5 bg-amber-100 text-amber-800 text-[9px] font-bold rounded-full border border-amber-200">Pending</span>
+                                )}
+                              </td>
+                              <td className="py-2.5 px-3">
+                                <button
+                                  type="button"
+                                  onClick={() => setSelectedReceiptTxn(t)}
+                                  className={`inline-flex items-center gap-1 text-[9px] font-extrabold px-2.5 py-1 rounded-full transition cursor-pointer shadow-2xs border ${
+                                    t.status === 'approved'
+                                      ? 'text-sky-700 hover:text-sky-900 bg-sky-50 hover:bg-sky-100 border-sky-200'
+                                      : t.status === 'rejected'
+                                      ? 'text-rose-700 hover:text-rose-900 bg-rose-50 hover:bg-rose-100 border-rose-200'
+                                      : 'text-amber-700 hover:text-amber-900 bg-amber-50 hover:bg-amber-100 border-amber-200'
+                                  }`}
+                                  title="Tap to View, Share & Print Voucher Receipt"
+                                >
+                                  <FileText className="w-2.5 h-2.5 text-current" />
+                                  <span>{t.status === 'rejected' ? 'Receipt / Comment 📄' : 'Receipt PDF 📄'}</span>
+                                </button>
+                              </td>
+                              <td className="py-2.5 px-3 text-slate-500 text-[10px] font-mono">{t.createdAt}</td>
+                            </tr>
+                          );
+                        })}
+                        {todayUserSendAndDebitTxns.length === 0 && (
+                          <tr>
+                            <td colSpan={8} className="text-center py-6 text-slate-400 text-xs">
+                              <div className="space-y-1">
+                                <p className="font-semibold text-slate-600">No Send Money or Debit transactions logged for today ({getFormattedTodayBDDate()}).</p>
+                                <p className="text-[10px] text-slate-400">Any Send Money or debit transactions completed today on Bangladeshi date will appear here automatically.</p>
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                      {todayUserSendAndDebitTxns.length > 0 && (
+                        <tfoot>
+                          <tr className="bg-rose-50/60 font-bold text-slate-800 border-t border-rose-200 text-xs">
+                            <td colSpan={4} className="py-2.5 px-3 uppercase text-[10px] text-slate-600">
+                              Today Total Send & Debit ({todayUserSendAndDebitTxns.length} record{todayUserSendAndDebitTxns.length > 1 ? 's' : ''}):
+                            </td>
+                            <td className="py-2.5 px-3 text-right text-rose-800 font-mono text-sm font-black">
+                              - ৳ {todayUserSendAndDebitTotalSum.toFixed(2)}
+                            </td>
+                            <td colSpan={3} className="py-2.5 px-3 text-[10px] text-slate-500 font-normal">
+                              Approved: ৳{todayUserSendAndDebitApprovedSum.toFixed(2)} | Pending: ৳{todayUserSendAndDebitPendingSum.toFixed(2)}
+                            </td>
+                          </tr>
+                        </tfoot>
+                      )}
+                    </table>
+                  </div>
                 </div>
 
                 {/* Filtering Table Setup */}
@@ -2734,6 +4373,7 @@ export default function LiveSimulation() {
                       const isCommissionCharge = t.recipient === 'System Commission Charge' || t.type === 'commission' || (t.referenceNo && t.referenceNo.startsWith('COM-'));
                       const isSendMoney = t.type === 'send_money' && !isCommissionCharge;
                       
+                      if (appliedFilterType === 'none') return false;
                       if (appliedFilterType === 'deposit' && t.type !== 'deposit') return false;
                       if (appliedFilterType === 'send' && !isSendMoney) return false;
                       if (appliedFilterType === 'commission' && (!isCommissionCharge && !isSendMoney)) return false;
@@ -2804,7 +4444,11 @@ export default function LiveSimulation() {
                               <input 
                                 type="date"
                                 value={filterStartDate}
-                                onChange={(e) => setFilterStartDate(e.target.value)}
+                                onChange={(e) => {
+                                  const val = e.target.value;
+                                  setFilterStartDate(val);
+                                  setAppliedFilterStartDate(val);
+                                }}
                                 className="w-full p-2 border border-slate-200 rounded-lg text-xs bg-white focus:outline-none font-medium text-slate-700"
                               />
                             </div>
@@ -2813,7 +4457,11 @@ export default function LiveSimulation() {
                               <input 
                                 type="date"
                                 value={filterEndDate}
-                                onChange={(e) => setFilterEndDate(e.target.value)}
+                                onChange={(e) => {
+                                  const val = e.target.value;
+                                  setFilterEndDate(val);
+                                  setAppliedFilterEndDate(val);
+                                }}
                                 className="w-full p-2 border border-slate-200 rounded-lg text-xs bg-white focus:outline-none font-medium text-slate-700"
                               />
                             </div>
@@ -2823,9 +4471,14 @@ export default function LiveSimulation() {
                               <label className="block text-[10px] font-bold text-slate-600 uppercase mb-1">Type (Deposit / Send / Commission)</label>
                               <select 
                                 value={filterType}
-                                onChange={(e) => setFilterType(e.target.value)}
+                                onChange={(e) => {
+                                  const val = e.target.value;
+                                  setFilterType(val);
+                                  setAppliedFilterType(val);
+                                }}
                                 className="w-full p-2 border border-slate-200 rounded-lg text-xs bg-white focus:outline-none font-medium text-slate-700 font-bold text-slate-800"
                               >
+                                <option value="none">None</option>
                                 <option value="all">All (Deposit, Send & Commission)</option>
                                 <option value="deposit">Deposit</option>
                                 <option value="send">Send</option>
@@ -2839,7 +4492,11 @@ export default function LiveSimulation() {
                               <input 
                                 type="text"
                                 value={filterCustMobile}
-                                onChange={(e) => setFilterCustMobile(e.target.value)}
+                                onChange={(e) => {
+                                  const val = e.target.value;
+                                  setFilterCustMobile(val);
+                                  setAppliedFilterCustMobile(val);
+                                }}
                                 placeholder="e.g. +8801..."
                                 className="w-full p-2 border border-slate-200 rounded-lg text-xs bg-white focus:outline-none font-medium text-slate-700"
                               />
@@ -2860,7 +4517,7 @@ export default function LiveSimulation() {
                               <button 
                                 type="button"
                                 onClick={handleResetSearchFilter}
-                                className="px-3 py-1.5 text-xs text-slate-600 hover:text-slate-900 bg-white border border-slate-200 rounded-lg font-medium cursor-pointer"
+                                className="px-3 py-1.5 text-xs text-slate-600 hover:text-slate-900 bg-white hover:bg-slate-100 border border-slate-200 rounded-lg font-medium cursor-pointer transition shadow-sm"
                               >
                                 Reset
                               </button>
@@ -2887,11 +4544,12 @@ export default function LiveSimulation() {
                               <th className="py-2">Way</th>
                               <th className="py-2">Amount (TK)</th>
                               <th className="py-2">Status</th>
+                              <th className="py-2">Receipt</th>
                               <th className="py-2">Date</th>
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
-                            {filteredUserTransactions.map((t, index) => {
+                            {filteredUserTransactions.slice(0, userLedgerLimit).map((t, index) => {
                               const isCommissionCharge = t.recipient === 'System Commission Charge' || t.type === 'commission' || (t.referenceNo && t.referenceNo.startsWith('COM-'));
                               const isSendMoney = t.type === 'send_money' && !isCommissionCharge;
 
@@ -2940,12 +4598,34 @@ export default function LiveSimulation() {
                                   </td>
                                   <td className="py-2">
                                     {t.status === 'approved' ? (
-                                      <span className="inline-flex px-2 py-0.5 bg-emerald-100 text-emerald-800 text-[9px] font-bold rounded-full">Approved</span>
+                                      <div className="flex flex-col items-start gap-0.5">
+                                        <span className="inline-flex px-2 py-0.5 bg-emerald-100 text-emerald-800 text-[9px] font-bold rounded-full">Approved</span>
+                                        <span className="text-[9px] font-mono font-bold text-emerald-700 bg-emerald-50 px-1 py-0.2 rounded border border-emerald-100 mt-0.5">
+                                          PIN: {t.authPin || '123456'}
+                                        </span>
+                                      </div>
                                     ) : t.status === 'rejected' ? (
                                       <span className="inline-flex px-2 py-0.5 bg-red-100 text-red-800 text-[9px] font-bold rounded-full">Rejected</span>
                                     ) : (
                                       <span className="inline-flex px-2 py-0.5 bg-amber-100 text-amber-800 text-[9px] font-bold rounded-full">Pending</span>
                                     )}
+                                  </td>
+                                  <td className="py-2">
+                                    <button
+                                      type="button"
+                                      onClick={() => setSelectedReceiptTxn(t)}
+                                      className={`inline-flex items-center gap-1 text-[9px] font-extrabold px-2.5 py-1 rounded-full transition cursor-pointer shadow-2xs border ${
+                                        t.status === 'approved'
+                                          ? 'text-sky-700 hover:text-sky-900 bg-sky-50 hover:bg-sky-100 border-sky-200'
+                                          : t.status === 'rejected'
+                                          ? 'text-rose-700 hover:text-rose-900 bg-rose-50 hover:bg-rose-100 border-rose-200'
+                                          : 'text-amber-700 hover:text-amber-900 bg-amber-50 hover:bg-amber-100 border-amber-200'
+                                      }`}
+                                      title="Tap to View, Share & Print Voucher Receipt"
+                                    >
+                                      <FileText className="w-2.5 h-2.5 text-current" />
+                                      <span>{t.status === 'rejected' ? 'Receipt / Comment 📄' : 'Receipt PDF 📄'}</span>
+                                    </button>
                                   </td>
                                   <td className="py-2 text-slate-400 text-[10px] font-mono">{t.createdAt}</td>
                                 </tr>
@@ -2953,8 +4633,10 @@ export default function LiveSimulation() {
                             })}
                             {filteredUserTransactions.length === 0 && (
                               <tr>
-                                <td colSpan={7} className="text-center py-6 text-slate-400 text-xs">
-                                  No matching records found for the specified filter criteria.
+                                <td colSpan={8} className="text-center py-6 text-slate-400 text-xs">
+                                  {appliedFilterType === 'none'
+                                    ? 'No transaction type selected (None). Select Deposit, Send, Commission, or All to display records.'
+                                    : 'No matching records found for the specified filter criteria.'}
                                 </td>
                               </tr>
                             )}
@@ -2962,13 +4644,35 @@ export default function LiveSimulation() {
                         </table>
                       </div>
 
-                      {/* Download PDF statement button bottom bar when data is present */}
+                      {/* Download PDF statement & Show More bottom bar when data is present */}
                       {filteredUserTransactions.length > 0 && (
                         <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-slate-100 mt-2">
                           <span className="text-[11px] font-semibold text-slate-500">
-                            Showing <strong className="text-slate-800 font-bold">{filteredUserTransactions.length}</strong> matching transaction record{filteredUserTransactions.length > 1 ? 's' : ''}
+                            Showing <strong className="text-slate-800 font-bold">{Math.min(userLedgerLimit, filteredUserTransactions.length)}</strong> of <strong className="text-slate-800 font-bold">{filteredUserTransactions.length}</strong> matching transaction record{filteredUserTransactions.length > 1 ? 's' : ''}
                           </span>
-                          <button 
+                          <div className="flex items-center space-x-2">
+                            {filteredUserTransactions.length > 15 && (
+                              userLedgerLimit === 15 ? (
+                                <button
+                                  type="button"
+                                  onClick={() => setUserLedgerLimit(50)}
+                                  className="inline-flex items-center space-x-1 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 text-xs font-bold rounded-lg transition cursor-pointer"
+                                >
+                                  <span>Show More (50)</span>
+                                  <ChevronDown className="w-3.5 h-3.5" />
+                                </button>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={() => setUserLedgerLimit(15)}
+                                  className="inline-flex items-center space-x-1 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 text-xs font-bold rounded-lg transition cursor-pointer"
+                                >
+                                  <span>Show Less (15)</span>
+                                  <ChevronUp className="w-3.5 h-3.5" />
+                                </button>
+                              )
+                            )}
+                            <button 
                             type="button"
                             onClick={() => {
                               const charges = commissionCharges[currentSessionUser.id] || [];
@@ -2990,70 +4694,23 @@ export default function LiveSimulation() {
                             <span>Download PDF Bank Statement ({filteredUserTransactions.length})</span>
                           </button>
                         </div>
-                      )}
+                      </div>
+                    )}
                     </div>
                   );
                 })()}
-
-              </div>
-
-              {/* Sidebar alerts and security details */}
-              <div className="lg:col-span-5 space-y-6">
-                
-                {/* Simulated notifications */}
-                <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-4">
-                  <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider">Notifications</h3>
-                  
-                  <div className="space-y-2.5 max-h-[220px] overflow-y-auto pr-1">
-                    {notifications.filter(n => n.userId === currentSessionUser.id).map((n, index) => (
-                      <div key={`${n.id}-${index}`} className="p-3 bg-slate-50 rounded-lg border-l-4 border-sky-500 text-left space-y-1">
-                        <span className="block text-[10px] font-bold text-slate-950 leading-tight">{n.title}</span>
-                        <p className="text-[9px] text-slate-500 leading-normal">{n.message}</p>
-                        <span className="block text-[8px] text-slate-400 font-mono">{n.createdAt}</span>
-                      </div>
-                    ))}
-                    {notifications.filter(n => n.userId === currentSessionUser.id).length === 0 && (
-                      <p className="text-[11px] text-slate-400 text-center py-6">No recent notifications logged.</p>
-                    )}
-                  </div>
-                </div>
-
-                {/* Profile settings simulation */}
-                <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-4">
-                  <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider">Account Configurations</h3>
-                  <form onSubmit={handleSettingsSubmit} className="space-y-3">
-                    <div>
-                      <label className="block text-[9px] font-bold text-slate-500 uppercase">Update Account Name</label>
-                      <input 
-                        type="text" 
-                        value={settingsName}
-                        onChange={(e) => setSettingsName(e.target.value)}
-                        required 
-                        className="w-full p-2 border border-slate-200 rounded-lg text-xs bg-slate-50 focus:outline-none mt-1" 
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-[9px] font-bold text-slate-500 uppercase">Change security password</label>
-                      <input 
-                        type="password" 
-                        value={settingsPass}
-                        onChange={(e) => setSettingsPass(e.target.value)}
-                        className="w-full p-2 border border-slate-200 rounded-lg text-xs bg-slate-50 focus:outline-none mt-1" 
-                        placeholder="••••••••" 
-                      />
-                    </div>
-                    <button type="submit" className="w-full py-1.5 bg-slate-900 hover:bg-slate-800 text-white text-[10px] font-semibold rounded-lg cursor-pointer">
-                      Save Profile Parameters
-                    </button>
-                  </form>
-                </div>
 
               </div>
             </div>
 
             {/* Transaction Ledger list */}
             <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
-              <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider">Your Transaction Ledger</h3>
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-2">
+                <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider">Your Transaction Ledger</h3>
+                <span className="text-[11px] font-semibold text-slate-500">
+                  Showing <strong className="text-slate-800 font-bold">{Math.min(userLedgerLimit, userTxns.length)}</strong> of <strong className="text-slate-800 font-bold">{userTxns.length}</strong> records
+                </span>
+              </div>
               
               <div className="overflow-x-auto">
                 <table className="w-full divide-y divide-slate-200 text-left text-xs">
@@ -3065,11 +4722,12 @@ export default function LiveSimulation() {
                       <th className="py-2.5">Way</th>
                       <th className="py-2.5">Amount (TK)</th>
                       <th className="py-2.5">Settlement State</th>
+                      <th className="py-2.5">Receipt</th>
                       <th className="py-2.5">Timestamp</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
-                    {transactions.filter(t => t.userId === currentSessionUser.id).map((t, index) => (
+                    {userTxns.slice(0, userLedgerLimit).map((t, index) => (
                       <tr key={`${t.id}-${index}`}>
                         <td className="py-2.5 font-mono text-[10px] text-slate-600">{t.referenceNo}</td>
                         <td className="py-2.5">
@@ -3099,18 +4757,160 @@ export default function LiveSimulation() {
                             <span className="inline-flex px-2 py-0.5 bg-amber-100 text-amber-800 text-[9px] font-bold rounded-full animate-pulse">Awaiting Approval</span>
                           )}
                         </td>
+                        <td className="py-2.5">
+                          <button
+                            type="button"
+                            onClick={() => setSelectedReceiptTxn(t)}
+                            className={`inline-flex items-center gap-1 text-[9px] font-extrabold px-2.5 py-1 rounded-full transition cursor-pointer shadow-2xs border ${
+                              t.status === 'approved'
+                                ? 'text-sky-700 hover:text-sky-900 bg-sky-50 hover:bg-sky-100 border-sky-200'
+                                : t.status === 'rejected'
+                                ? 'text-rose-700 hover:text-rose-900 bg-rose-50 hover:bg-rose-100 border-rose-200'
+                                : 'text-amber-700 hover:text-amber-900 bg-amber-50 hover:bg-amber-100 border-amber-200'
+                            }`}
+                            title="Tap to View, Share & Print Voucher Receipt"
+                          >
+                            <FileText className="w-2.5 h-2.5 text-current" />
+                            <span>{t.status === 'rejected' ? 'Receipt / Comment 📄' : 'Receipt PDF 📄'}</span>
+                          </button>
+                        </td>
                         <td className="py-2.5 text-slate-400 text-[10px] font-mono">{t.createdAt}</td>
                       </tr>
                     ))}
-                    {transactions.filter(t => t.userId === currentSessionUser.id).length === 0 && (
+                    {userTxns.length === 0 && (
                       <tr>
-                        <td colSpan={7} className="text-center py-8 text-slate-400">No transactions recorded in local simulated database.</td>
+                        <td colSpan={8} className="text-center py-8 text-slate-400">No transactions recorded in local simulated database.</td>
                       </tr>
                     )}
                   </tbody>
                 </table>
               </div>
+
+              {userTxns.length > 15 && (
+                <div className="pt-3 flex justify-center border-t border-slate-100">
+                  {userLedgerLimit === 15 ? (
+                    <button
+                      type="button"
+                      onClick={() => setUserLedgerLimit(50)}
+                      className="px-4 py-2 text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-lg transition cursor-pointer flex items-center space-x-1.5 shadow-sm"
+                    >
+                      <span>Show More (Display 50 Data)</span>
+                      <ChevronDown className="w-4 h-4" />
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setUserLedgerLimit(15)}
+                      className="px-4 py-2 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-lg transition cursor-pointer flex items-center space-x-1.5"
+                    >
+                      <span>Show Less (Display 15 Data)</span>
+                      <ChevronUp className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
+
+            {/* Inquiry & Support System for User */}
+            {renderInquirySystem(currentSessionUser, false)}
+          </div>
+        )}
+
+        {/* PAGE: USER SUPPORT & HELP TICKETS */}
+        {activePage === 'user-inquiries' && (
+          <div className="p-6 bg-slate-50 space-y-6 flex-grow select-none">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-slate-200 pb-4 gap-4">
+              <div className="space-y-1">
+                <div className="flex items-center space-x-2">
+                  <button
+                    type="button"
+                    onClick={() => setActivePage('user-dashboard')}
+                    className="p-1.5 text-slate-500 hover:text-slate-900 bg-white border border-slate-200 rounded-lg shadow-2xs hover:bg-slate-100 transition cursor-pointer"
+                    title="Return to User Dashboard"
+                  >
+                    <ArrowLeft className="w-4 h-4" />
+                  </button>
+                  <h1 className="text-xl font-bold text-slate-900 font-sans tracking-tight">Support & Help Tickets</h1>
+                </div>
+                <p className="text-[11px] text-slate-500">
+                  Submit new support inquiries, attach receipts or screenshot evidence, and message directly with site administrators.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setActivePage('user-dashboard')}
+                className="px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition flex items-center space-x-1.5 cursor-pointer"
+              >
+                <ArrowLeft className="w-3.5 h-3.5" />
+                <span>Return to Client Portal</span>
+              </button>
+            </div>
+
+            {currentSessionUser ? (
+              renderInquirySystem(currentSessionUser, false)
+            ) : (
+              <div className="bg-white p-8 rounded-2xl border border-slate-200 text-center space-y-4 max-w-md mx-auto my-8">
+                <HelpCircle className="w-10 h-10 text-sky-500 mx-auto" />
+                <h3 className="text-base font-bold text-slate-900">Sign in to Access Support Tickets</h3>
+                <p className="text-xs text-slate-500">Please sign in to your client account to view existing tickets or submit a new inquiry.</p>
+                <button
+                  type="button"
+                  onClick={() => setActivePage('user-login')}
+                  className="px-5 py-2.5 bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold rounded-xl transition cursor-pointer"
+                >
+                  Sign In Now
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* PAGE: ADMIN SUPPORT & HELP TICKETS */}
+        {activePage === 'admin-inquiries' && (
+          <div className="p-6 bg-slate-50 space-y-6 flex-grow select-none">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-slate-200 pb-4 gap-4">
+              <div className="space-y-1">
+                <div className="flex items-center space-x-2">
+                  <button
+                    type="button"
+                    onClick={() => setActivePage('admin-dashboard')}
+                    className="p-1.5 text-slate-500 hover:text-slate-900 bg-white border border-slate-200 rounded-lg shadow-2xs hover:bg-slate-100 transition cursor-pointer"
+                    title="Return to Admin Dashboard"
+                  >
+                    <ArrowLeft className="w-4 h-4" />
+                  </button>
+                  <h1 className="text-xl font-bold text-slate-900 font-sans tracking-tight">Admin Support & Help Tickets Operations</h1>
+                </div>
+                <p className="text-[11px] text-slate-500">
+                  Manage, reply to, attach proof files, and update status for all client support inquiries across the platform.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setActivePage('admin-dashboard')}
+                className="px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition flex items-center space-x-1.5 cursor-pointer"
+              >
+                <ArrowLeft className="w-3.5 h-3.5" />
+                <span>Return to Admin Panel</span>
+              </button>
+            </div>
+
+            {currentSessionUser && currentSessionUser.role === 'admin' ? (
+              renderInquirySystem(currentSessionUser, true)
+            ) : (
+              <div className="bg-white p-8 rounded-2xl border border-slate-200 text-center space-y-4 max-w-md mx-auto my-8">
+                <ShieldAlert className="w-10 h-10 text-rose-500 mx-auto" />
+                <h3 className="text-base font-bold text-slate-900">Admin Clearance Required</h3>
+                <p className="text-xs text-slate-500">Please sign in as an Administrator to access the Support Ticket Operations Center.</p>
+                <button
+                  type="button"
+                  onClick={() => setActivePage('admin-login')}
+                  className="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-xl transition cursor-pointer"
+                >
+                  Admin Login
+                </button>
+              </div>
+            )}
           </div>
         )}
 
@@ -3123,9 +4923,56 @@ export default function LiveSimulation() {
                 <h1 className="text-2xl font-bold text-slate-900 font-sans tracking-tight">Supervisor Core Control</h1>
                 <p className="text-[11px] text-slate-500">Security PIN authenticated. Dynamic action releases ready.</p>
               </div>
-              <div>
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setActivePage('admin-inquiries')}
+                  className="bg-sky-600 hover:bg-sky-700 text-white text-[10px] font-bold py-2.5 px-3.5 rounded-lg flex items-center space-x-1.5 transition shadow cursor-pointer relative"
+                  title="Open User Support & Help Messages Box"
+                >
+                  <MessageSquare className="w-3.5 h-3.5 text-sky-200" />
+                  <span>Support & Help Message Box</span>
+                  {inquiries.filter(i => i.status === 'open' || i.status === 'in_progress').length > 0 && (
+                    <span className="bg-amber-400 text-slate-950 font-black text-[9px] px-1.5 py-0.2 rounded-full border border-amber-300 ml-1">
+                      {inquiries.filter(i => i.status === 'open' || i.status === 'in_progress').length}
+                    </span>
+                  )}
+                </button>
+
                 <button 
-                  onClick={() => alert('Download Client Ledger has compiled successfully. Saved under system folder.')}
+                  onClick={() => {
+                    try {
+                      let csvContent = "data:text/csv;charset=utf-8,";
+                      csvContent += "User ID,Full Name,Email,Mobile,Role,Status,Balance (BDT),Commission Rate,Registered At\n";
+
+                      users.forEach(u => {
+                        const row = [
+                          `"${u.id}"`,
+                          `"${u.fullName}"`,
+                          `"${u.email}"`,
+                          `"${u.mobile}"`,
+                          `"${u.role}"`,
+                          `"${u.status || 'Active'}"`,
+                          `"${u.balance.toFixed(2)}"`,
+                          `"${u.commissionMultiplier ?? 7.5}"`,
+                          `"${u.createdAt || ''}"`
+                        ].join(",");
+                        csvContent += row + "\n";
+                      });
+
+                      const encodedUri = encodeURI(csvContent);
+                      const link = document.createElement("a");
+                      link.setAttribute("href", encodedUri);
+                      link.setAttribute("download", `client_ledger_${new Date().toISOString().slice(0, 10)}.csv`);
+                      document.body.appendChild(link);
+                      link.click();
+                      document.body.removeChild(link);
+                      setSimAlert({ type: 'success', message: 'Client Ledger CSV downloaded successfully!' });
+                    } catch (err) {
+                      console.error("Ledger download error:", err);
+                      setSimAlert({ type: 'error', message: 'Failed to download Client Ledger CSV.' });
+                    }
+                  }}
                   className="bg-slate-950 hover:bg-slate-800 text-white text-[10px] font-bold py-2.5 px-3 rounded-lg flex items-center space-x-1 transition shadow cursor-pointer"
                 >
                   <Download className="w-3.5 h-3.5" />
@@ -3135,7 +4982,7 @@ export default function LiveSimulation() {
             </div>
 
             {/* Admin Stats Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
               {/* Stat 1 */}
               <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
                 <div className="space-y-0.5">
@@ -3181,6 +5028,23 @@ export default function LiveSimulation() {
                 </div>
                 <div className="p-2.5 rounded-lg bg-violet-50 text-violet-600">
                   <ArrowRightLeft className="w-5 h-5" />
+                </div>
+              </div>
+
+              {/* Stat 5: Support Tickets */}
+              <div 
+                onClick={() => setActivePage('admin-inquiries')}
+                className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between cursor-pointer hover:border-sky-300 hover:shadow-md transition"
+              >
+                <div className="space-y-0.5">
+                  <span className="text-slate-400 text-[9px] font-bold uppercase tracking-wider">Support Tickets</span>
+                  <div className="text-2xl font-extrabold text-sky-600 font-sans">
+                    {inquiries.filter(i => i.status === 'open' || i.status === 'in_progress').length}
+                  </div>
+                  <span className="text-[8px] text-sky-600 font-bold">Active tickets pending</span>
+                </div>
+                <div className="p-2.5 rounded-lg bg-sky-50 text-sky-600">
+                  <MessageSquare className="w-5 h-5" />
                 </div>
               </div>
             </div>
@@ -3336,18 +5200,60 @@ export default function LiveSimulation() {
                             {u.fullName.split(' ').map(n => n[0]).join('').substring(0, 2)}
                           </div>
                           <div>
-                            <strong className="block text-slate-900 group-hover:text-sky-700 transition-colors flex items-center gap-1">
+                            <strong className="block text-slate-900 group-hover:text-sky-700 transition-colors flex flex-wrap items-center gap-1">
                               {u.fullName}
                               <span className={`text-[8px] px-1 py-0.2 rounded font-extrabold uppercase ${
                                 u.role === 'admin' ? 'bg-amber-100 text-amber-800 border border-amber-300' : 'bg-slate-100 text-slate-500'
                               }`}>
                                 {u.role}
                               </span>
+                              {u.status === 'denied' || u.status === 'blocked' ? (
+                                <span className="text-[8px] bg-red-100 text-red-700 font-extrabold px-1 py-0.2 rounded uppercase border border-red-200">
+                                  Access Denied
+                                </span>
+                              ) : (
+                                <span className="text-[8px] bg-emerald-100 text-emerald-800 font-extrabold px-1 py-0.2 rounded uppercase">
+                                  Active
+                                </span>
+                              )}
                             </strong>
                             <span className="block text-[9px] text-slate-400 font-mono">{u.mobile}</span>
                           </div>
                         </div>
                         <div className="flex items-center space-x-1.5">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const userInq = inquiries.find(i => i.userId === u.id);
+                              if (userInq) {
+                                setSelectedInquiryId(userInq.id);
+                              }
+                              setActivePage('admin-inquiries');
+                            }}
+                            className="p-1.5 text-slate-400 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition cursor-pointer relative"
+                            title={`Open Support & Help Message Box for ${u.fullName}`}
+                          >
+                            <MessageSquare className="w-3.5 h-3.5" />
+                            {inquiries.some(i => i.userId === u.id && (i.status === 'open' || i.status === 'in_progress')) && (
+                              <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-amber-500 rounded-full ring-2 ring-white" />
+                            )}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleToggleUserStatus(u);
+                            }}
+                            className={`p-1.5 rounded-lg transition cursor-pointer ${
+                              u.status === 'denied' || u.status === 'blocked'
+                                ? 'text-red-600 bg-red-50 hover:bg-red-100'
+                                : 'text-slate-400 hover:text-red-600 hover:bg-red-50'
+                            }`}
+                            title={u.status === 'denied' || u.status === 'blocked' ? `Allow Access for ${u.fullName}` : `Deny Access for ${u.fullName}`}
+                          >
+                            <UserX className="w-3.5 h-3.5" />
+                          </button>
                           <button
                             type="button"
                             onClick={(e) => {
@@ -3371,8 +5277,15 @@ export default function LiveSimulation() {
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
                           <div className="text-right pl-1">
-                            <span className="font-bold text-emerald-600 font-mono block">{u.balance.toFixed(2)} TK</span>
-                            <span className="text-[8px] bg-slate-100 px-1 py-0.5 rounded text-slate-500 font-medium group-hover:bg-sky-100 group-hover:text-sky-600 transition-colors">
+                            <span className={`font-mono block text-xs ${u.balance < 0 ? 'text-red-600 font-black' : 'text-emerald-600 font-bold'}`}>
+                              ৳ {u.balance.toFixed(2)}
+                            </span>
+                            {u.balance < 0 && (
+                              <span className="text-[7px] bg-red-100 text-red-700 px-1 py-0.2 rounded font-black uppercase block text-center mt-0.5">
+                                Minus Balance
+                              </span>
+                            )}
+                            <span className="text-[8px] bg-slate-100 px-1 py-0.5 rounded text-slate-500 font-medium group-hover:bg-sky-100 group-hover:text-sky-600 transition-colors block mt-0.5">
                               Control &rarr;
                             </span>
                           </div>
@@ -3474,10 +5387,329 @@ export default function LiveSimulation() {
                 </table>
               </div>
             </div>
+
+            {/* Support & Help Tickets Operations in Admin Dashboard */}
+            <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-3">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                <div className="flex items-center space-x-2">
+                  <div className="p-2 bg-sky-100 text-sky-700 rounded-xl">
+                    <MessageSquare className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider">Support & Help Tickets Control Panel</h3>
+                    <p className="text-[10px] text-slate-500">Real-time client ticket inbox, file attachment inspection & status releases</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setActivePage('admin-inquiries')}
+                  className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition flex items-center space-x-1 cursor-pointer"
+                >
+                  <ExternalLink className="w-3.5 h-3.5" />
+                  <span>Full Support Portal</span>
+                </button>
+              </div>
+              {renderInquirySystem(currentSessionUser, true)}
+            </div>
+
+            {/* Supervisor Core Control Bottom Navigation Menu Card */}
+            <div className="bg-slate-900 text-white p-4 rounded-2xl border border-slate-800 shadow-md space-y-2">
+              <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+                <span className="text-[10px] font-black uppercase text-blue-400 tracking-wider">Supervisor Quick Switch Menu</span>
+                <span className="text-[9px] text-slate-400 font-mono">Admin | Client | Commission</span>
+              </div>
+              <div className="grid grid-cols-3 gap-3">
+                <button
+                  type="button"
+                  onClick={() => setActivePage('admin-dashboard')}
+                  className={`p-3 rounded-xl border transition flex items-center justify-center space-x-2 text-xs font-bold cursor-pointer ${
+                    activePage === 'admin-dashboard' || activePage === 'admin-inquiries'
+                      ? 'bg-blue-600 border-blue-400 text-white shadow'
+                      : 'bg-slate-800/80 border-slate-700 text-slate-300 hover:text-white hover:bg-slate-800'
+                  }`}
+                >
+                  <Shield className="w-4 h-4 text-sky-300" />
+                  <span>Admin</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (currentSessionUser) setActivePage('user-dashboard');
+                    else setActivePage('user-login');
+                  }}
+                  className={`p-3 rounded-xl border transition flex items-center justify-center space-x-2 text-xs font-bold cursor-pointer ${
+                    activePage === 'user-dashboard' || activePage === 'user-login' || activePage === 'user-inquiries'
+                      ? 'bg-blue-600 border-blue-400 text-white shadow'
+                      : 'bg-slate-800/80 border-slate-700 text-slate-300 hover:text-white hover:bg-slate-800'
+                  }`}
+                >
+                  <User className="w-4 h-4 text-sky-300" />
+                  <span>Client</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setActivePage('commission-apply')}
+                  className={`p-3 rounded-xl border transition flex items-center justify-center space-x-2 text-xs font-bold cursor-pointer ${
+                    activePage === 'commission-apply'
+                      ? 'bg-emerald-600 border-emerald-400 text-white shadow font-black'
+                      : 'bg-emerald-950/40 border-emerald-500/30 text-emerald-300 hover:text-white hover:bg-emerald-900/60'
+                  }`}
+                >
+                  <Zap className="w-4 h-4 text-emerald-400" />
+                  <span>Commission</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* PAGE: COMMISSION APPLY & SETTLEMENT */}
+        {activePage === 'commission-apply' && (
+          <div className="p-6 bg-slate-50 space-y-6 flex-grow select-none text-left">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-slate-200 pb-4 gap-4">
+              <div className="space-y-1">
+                <div className="flex items-center space-x-2">
+                  <div className="p-2 bg-emerald-100 text-emerald-700 rounded-xl">
+                    <Zap className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h1 className="text-xl font-bold text-slate-900 font-sans tracking-tight">Commission Apply & Settlement Portal</h1>
+                    <p className="text-[11px] text-slate-500">
+                      Directly charge, deduct, and settle commission fees on client available balances in real time.
+                    </p>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="flex items-center space-x-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (currentSessionUser?.role === 'admin') setActivePage('admin-dashboard');
+                    else setActivePage('admin-login');
+                  }}
+                  className="px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition flex items-center space-x-1.5 cursor-pointer"
+                >
+                  <Shield className="w-3.5 h-3.5" />
+                  <span>Admin Panel</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (currentSessionUser) setActivePage('user-dashboard');
+                    else setActivePage('user-login');
+                  }}
+                  className="px-3.5 py-2 bg-sky-600 hover:bg-sky-700 text-white rounded-xl text-xs font-bold transition flex items-center space-x-1.5 cursor-pointer"
+                >
+                  <User className="w-3.5 h-3.5" />
+                  <span>Client Portal</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Quick Charge Commission Form Box */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="lg:col-span-1 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+                <div className="border-b border-slate-100 pb-2 flex items-center space-x-2">
+                  <Zap className="w-4 h-4 text-emerald-600" />
+                  <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider">Charge Commission Fee</h3>
+                </div>
+
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Select Client Profile</label>
+                    <select
+                      value={selectedCommissionUserId}
+                      onChange={(e) => {
+                        const uid = e.target.value;
+                        setSelectedCommissionUserId(uid);
+                        const u = users.find(x => x.id === uid);
+                        if (u) {
+                          setCommissionMultiplierInput(u.commissionMultiplier !== undefined ? String(u.commissionMultiplier) : '');
+                        } else {
+                          setCommissionMultiplierInput('');
+                        }
+                      }}
+                      className="w-full p-2.5 border border-slate-200 rounded-xl text-xs bg-slate-50 focus:outline-none text-slate-800 font-bold"
+                    >
+                      <option value="">-- Choose Client Profile --</option>
+                      {systemClients.map(u => (
+                        <option key={u.id} value={u.id}>
+                          {u.fullName} ({u.mobile}) - ৳ {u.balance.toFixed(2)}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {(() => {
+                    const selUser = users.find(u => u.id === selectedCommissionUserId);
+                    if (!selUser) return null;
+                    return (
+                      <div className="p-3 bg-slate-900 text-white rounded-xl space-y-1 font-mono text-xs">
+                        <div className="text-[10px] text-slate-400 font-extrabold uppercase">Available Balance</div>
+                        <div className={`text-xl font-black ${selUser.balance < 0 ? 'text-red-400' : 'text-emerald-400'}`}>
+                          ৳ {selUser.balance.toFixed(2)}
+                        </div>
+                        {selUser.balance < 0 && (
+                          <div className="text-[8px] bg-red-500/20 text-red-300 px-2 py-0.5 rounded font-bold uppercase w-max">
+                            Minus Balance (Overdraft Active)
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
+
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Manual Commission Amount (TK)</label>
+                    <div className="flex gap-2">
+                      <input
+                        type="number"
+                        step="0.01"
+                        placeholder="৳ Manual amount"
+                        value={manualChargeInput}
+                        onChange={(e) => setManualChargeInput(e.target.value)}
+                        className="flex-grow p-2.5 border border-slate-200 rounded-xl text-xs bg-slate-50 focus:outline-none font-bold text-slate-900 font-mono"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (!selectedCommissionUserId) {
+                            setSimAlert({ type: 'error', message: 'Please choose a client profile first.' });
+                            return;
+                          }
+                          handleApplyManualCommissionCharge(selectedCommissionUserId);
+                        }}
+                        className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black rounded-xl transition shadow-sm cursor-pointer"
+                      >
+                        Charge
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="pt-2 border-t border-slate-100 space-y-2">
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase">Set Custom Multiplier Rate (per 1000 TK)</label>
+                    <div className="flex gap-2">
+                      <input
+                        type="number"
+                        step="0.01"
+                        placeholder="e.g. 7.5"
+                        value={commissionMultiplierInput}
+                        onChange={(e) => setCommissionMultiplierInput(e.target.value)}
+                        className="flex-grow p-2 border border-slate-200 rounded-lg text-xs bg-slate-50 focus:outline-none font-mono"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleApplyUserCommissionMultiplier}
+                        disabled={!selectedCommissionUserId}
+                        className="px-3 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 text-white text-xs font-bold rounded-lg transition cursor-pointer"
+                      >
+                        Save Rate
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* All Clients Available Balance & Commission Apply Overview Table */}
+              <div className="lg:col-span-2 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+                <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                  <h3 className="text-xs font-extrabold text-slate-900 uppercase tracking-wider">All Clients Available Balance & Rates</h3>
+                  <span className="text-[10px] font-bold text-slate-500 font-mono">{systemClients.length} Client Profiles Registered</span>
+                </div>
+
+                <div className="overflow-x-auto">
+                  <table className="w-full divide-y divide-slate-200 text-left text-xs">
+                    <thead>
+                      <tr className="text-slate-400 uppercase font-bold text-[10px]">
+                        <th className="py-2.5 px-3">Client</th>
+                        <th className="py-2.5 px-3">Mobile Number</th>
+                        <th className="py-2.5 px-3">Available Balance</th>
+                        <th className="py-2.5 px-3">Rate / 1k</th>
+                        <th className="py-2.5 px-3 text-right">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
+                      {systemClients.map((u) => (
+                        <tr key={u.id} className="hover:bg-slate-50/80 transition">
+                          <td className="py-2.5 px-3 font-bold text-slate-900">{u.fullName}</td>
+                          <td className="py-2.5 px-3 font-mono text-slate-500">{u.mobile}</td>
+                          <td className="py-2.5 px-3 font-mono">
+                            <span className={`font-black ${u.balance < 0 ? 'text-red-600' : 'text-emerald-600'}`}>
+                              ৳ {u.balance.toFixed(2)}
+                            </span>
+                            {u.balance < 0 && (
+                              <span className="ml-1 text-[7px] bg-red-100 text-red-700 px-1 py-0.2 rounded font-black uppercase inline-block">
+                                Minus
+                              </span>
+                            )}
+                          </td>
+                          <td className="py-2.5 px-3 font-mono text-slate-600 font-bold">
+                            ৳ {u.commissionMultiplier !== undefined ? u.commissionMultiplier : 7.5}
+                          </td>
+                          <td className="py-2.5 px-3 text-right">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSelectedCommissionUserId(u.id);
+                                setCommissionMultiplierInput(u.commissionMultiplier !== undefined ? String(u.commissionMultiplier) : '');
+                              }}
+                              className="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-lg text-[10px] font-extrabold transition cursor-pointer"
+                            >
+                              Select & Charge
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Recent Commission Charges History Log */}
+                <div className="pt-4 border-t border-slate-100 space-y-2">
+                  <h4 className="text-[10px] font-black text-slate-700 uppercase tracking-wider">Platform Commission Charges Settlement Stream</h4>
+                  <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
+                    {(() => {
+                      const allCharges: Array<{userId: string, userName: string, amount: number, timestamp: string}> = [];
+                      Object.entries(commissionCharges).forEach(([uid, chgArr]) => {
+                        const usr = users.find(x => x.id === uid);
+                        chgArr.forEach(c => {
+                          allCharges.push({
+                            userId: uid,
+                            userName: usr ? usr.fullName : uid,
+                            amount: c.amount,
+                            timestamp: c.timestamp
+                          });
+                        });
+                      });
+
+                      if (allCharges.length === 0) {
+                        return <p className="text-[10px] text-slate-400 text-center py-3">No manual commission charges applied yet.</p>;
+                      }
+
+                      return allCharges.map((c, idx) => (
+                        <div key={idx} className="flex items-center justify-between p-2 bg-slate-50 rounded-lg border border-slate-200/80 text-xs">
+                          <div className="flex items-center space-x-2">
+                            <span className="text-[10px] text-slate-400 font-mono">{c.timestamp.slice(11, 19)}</span>
+                            <span className="font-bold text-slate-800">{c.userName}</span>
+                          </div>
+                          <span className="font-mono font-black text-rose-600 text-xs">
+                            - ৳ {c.amount.toFixed(2)}
+                          </span>
+                        </div>
+                      ));
+                    })()}
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         )}
 
       </div>
+
+
 
       {/* FOOTER */}
       <footer className="bg-slate-900 border-t border-slate-800 text-slate-400 py-6 text-center text-xs select-none mt-auto">
@@ -3489,14 +5721,18 @@ export default function LiveSimulation() {
         <div className="fixed inset-0 bg-slate-950/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white p-5 rounded-2xl max-w-sm w-full border border-slate-200 shadow-xl space-y-4 text-left">
             <div className="text-center space-y-1">
-              <ShieldAlert className="w-8 h-8 text-emerald-600 mx-auto" />
+              {pinChallengeAction.startsWith('approve') ? (
+                <ShieldAlert className="w-8 h-8 text-emerald-600 mx-auto" />
+              ) : (
+                <XCircle className="w-8 h-8 text-rose-600 mx-auto" />
+              )}
               <h3 className="text-sm font-bold text-slate-900">
                 {pinChallengeAction.startsWith('approve') ? 'Confirm & Authorize Approval' : 'Confirm Action Rejection'}
               </h3>
               <p className="text-[11px] text-slate-500 leading-normal">
                 {pinChallengeAction.startsWith('approve') 
                   ? 'Administrative security protocols mandate setting a manual custom PIN to authorize this transaction approval.'
-                  : 'Are you sure you want to decline this transaction request? Rejections do not require an authorization PIN.'}
+                  : 'Specify a rejection reason or comment below. This comment will be notified to the user and attached to their receipt.'}
               </p>
             </div>
             
@@ -3520,20 +5756,42 @@ export default function LiveSimulation() {
                 </div>
               )}
 
+              {pinChallengeAction.startsWith('reject') && (
+                <div>
+                  <label className="block text-[10px] font-bold uppercase text-slate-700 mb-1">
+                    Rejection Comment / Reason (Paragraph):
+                  </label>
+                  <textarea
+                    rows={3}
+                    value={rejectionCommentInput}
+                    onChange={(e) => setRejectionCommentInput(e.target.value)}
+                    placeholder="Type the rejection reason or details for the user (e.g. Invalid account details, duplicate request, etc.)..."
+                    className="w-full p-2.5 border border-slate-300 rounded-xl text-xs bg-slate-50 focus:outline-none focus:ring-2 focus:ring-rose-500 focus:border-transparent text-slate-800 font-medium leading-relaxed"
+                  />
+                  <p className="text-[9px] text-slate-400 mt-1 leading-normal">
+                    This note will be automatically sent in the user's notification feed and saved on the transaction receipt.
+                  </p>
+                </div>
+              )}
+
               {pinError && (
                 <p className="text-[10px] text-red-500 text-center font-semibold leading-snug">{pinError}</p>
               )}
 
               <div className="grid grid-cols-2 gap-3">
                 <button 
-                  onClick={() => { setPinChallengeAction(null); setPinChallengeTargetId(null); }}
+                  onClick={() => { setPinChallengeAction(null); setPinChallengeTargetId(null); setRejectionCommentInput(''); }}
                   className="py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg cursor-pointer text-center"
                 >
                   Cancel
                 </button>
                 <button 
                   onClick={handleAdminActionAuthorize}
-                  className="py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-lg shadow cursor-pointer text-center"
+                  className={`py-2 text-white text-xs font-bold rounded-lg shadow cursor-pointer text-center transition ${
+                    pinChallengeAction.startsWith('approve') 
+                      ? 'bg-emerald-600 hover:bg-emerald-700' 
+                      : 'bg-rose-600 hover:bg-rose-700'
+                  }`}
                 >
                   {pinChallengeAction.startsWith('approve') ? 'Authorize PIN' : 'Confirm Rejection'}
                 </button>
@@ -3594,6 +5852,16 @@ export default function LiveSimulation() {
                     </div>
                     <div className="space-y-2 text-[10px]">
                       <div className="flex justify-between items-center">
+                        <span className="text-slate-400">Account Access:</span>
+                        <span className={`font-bold text-[9px] uppercase px-2 py-0.5 rounded ${
+                          selectedUserToView.status === 'denied' || selectedUserToView.status === 'blocked'
+                            ? 'bg-red-100 text-red-800 border border-red-300 font-black'
+                            : 'bg-emerald-100 text-emerald-800'
+                        }`}>
+                          {selectedUserToView.status === 'denied' || selectedUserToView.status === 'blocked' ? 'Access Denied' : 'Active'}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center">
                         <span className="text-slate-400">Account Role:</span>
                         <span className={`font-bold text-[9px] uppercase px-2 py-0.5 rounded ${
                           selectedUserToView.role === 'admin' ? 'bg-amber-100 text-amber-800 border border-amber-300' : 'bg-slate-100 text-slate-700'
@@ -3616,6 +5884,20 @@ export default function LiveSimulation() {
                         <span className="font-semibold text-slate-700 font-mono">{selectedUserToView.password || 'demo123'}</span>
                       </div>
                     </div>
+
+                    {/* Access Toggle Button */}
+                    <button 
+                      type="button"
+                      onClick={() => handleToggleUserStatus(selectedUserToView)}
+                      className={`w-full py-2 px-3 border rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition cursor-pointer ${
+                        selectedUserToView.status === 'denied' || selectedUserToView.status === 'blocked'
+                          ? 'bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border-emerald-200'
+                          : 'bg-red-50 hover:bg-red-100 text-red-800 border-red-200'
+                      }`}
+                    >
+                      <UserX className="w-3.5 h-3.5" />
+                      <span>{selectedUserToView.status === 'denied' || selectedUserToView.status === 'blocked' ? 'Allow Access (Reactivate Account)' : 'Deny Access (Suspend Account)'}</span>
+                    </button>
 
                     {/* Role Toggle Button */}
                     <button 
@@ -3710,6 +5992,96 @@ export default function LiveSimulation() {
                           </table>
                         </div>
                       )}
+                    </div>
+
+                    {/* Support & Help User Message Box Section */}
+                    <div className="border-t border-slate-100 pt-4 mt-2">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-[10px] font-bold text-sky-700 uppercase tracking-wider flex items-center gap-1.5">
+                          <MessageSquare className="w-3.5 h-3.5 text-sky-600" />
+                          <span>User Message Box (Support & Help)</span>
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const userInq = inquiries.find(i => i.userId === selectedUserToView.id);
+                            if (userInq) setSelectedInquiryId(userInq.id);
+                            setIsCreatingInquiry(true);
+                          }}
+                          className="text-[9px] font-bold text-sky-600 hover:text-sky-800 bg-sky-50 hover:bg-sky-100 px-2 py-0.5 rounded border border-sky-200 transition cursor-pointer"
+                        >
+                          + New Message Thread
+                        </button>
+                      </div>
+
+                      {/* Display tickets for this user */}
+                      {(() => {
+                        const userInqs = inquiries.filter(i => i.userId === selectedUserToView.id);
+                        if (userInqs.length === 0) {
+                          return (
+                            <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-3 text-center text-slate-400 space-y-1">
+                              <HelpCircle className="w-5 h-5 mx-auto text-slate-300" />
+                              <p className="text-[11px] font-medium">No support messages from this user yet.</p>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setIsCreatingInquiry(true);
+                                }}
+                                className="text-[10px] text-sky-600 font-bold hover:underline"
+                              >
+                                Create message thread as admin
+                              </button>
+                            </div>
+                          );
+                        }
+
+                        return (
+                          <div className="space-y-2">
+                            {userInqs.map((inq) => {
+                              const isSelected = inq.id === selectedInquiryId;
+                              return (
+                                <div
+                                  key={inq.id}
+                                  onClick={() => {
+                                    setSelectedInquiryId(inq.id);
+                                    setActivePage('admin-inquiries');
+                                  }}
+                                  className={`p-2.5 rounded-xl border text-left cursor-pointer transition ${
+                                    isSelected
+                                      ? 'bg-sky-50 border-sky-300 shadow-xs'
+                                      : 'bg-white hover:bg-slate-50 border-slate-200'
+                                  }`}
+                                >
+                                  <div className="flex items-center justify-between mb-1">
+                                    <span className="font-mono text-[9px] font-bold text-sky-700 uppercase">
+                                      #{inq.id}
+                                    </span>
+                                    <span className={`text-[8px] font-bold px-1.5 py-0.2 rounded-full uppercase ${
+                                      inq.status === 'open' ? 'bg-amber-100 text-amber-800' :
+                                      inq.status === 'in_progress' ? 'bg-sky-100 text-sky-800' :
+                                      inq.status === 'resolved' ? 'bg-emerald-100 text-emerald-800' :
+                                      'bg-slate-200 text-slate-700'
+                                    }`}>
+                                      {inq.status.replace('_', ' ')}
+                                    </span>
+                                  </div>
+                                  <h5 className="text-[11px] font-bold text-slate-800 truncate mb-1">{inq.subject}</h5>
+                                  <div className="flex items-center justify-between text-[9px] text-slate-500">
+                                    <span>Category: {inq.category}</span>
+                                    <span className="font-mono">{inq.updatedAt.slice(11, 16)}</span>
+                                  </div>
+                                  <div className="mt-1 pt-1 border-t border-slate-100 flex items-center justify-between text-[9px]">
+                                    <span className="text-slate-500 font-medium">{inq.messages.length} message(s)</span>
+                                    <span className="text-sky-600 font-bold flex items-center gap-0.5">
+                                      Open Chat &rarr;
+                                    </span>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        );
+                      })()}
                     </div>
                   </div>
 
@@ -3961,12 +6333,34 @@ export default function LiveSimulation() {
                 </div>
 
                 {/* User's transaction ledger history */}
-                <div className="lg:col-span-7 bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-4 flex flex-col max-h-[350px]">
-                  <div className="flex justify-between items-center pb-2 border-b border-slate-100">
+                <div className="lg:col-span-7 bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-4 flex flex-col max-h-[380px]">
+                  <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-slate-100">
                     <div className="flex items-center space-x-2">
                       <ArrowRightLeft className="w-4 h-4 text-emerald-600" />
                       <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider">Activity Transaction Ledger</h3>
                     </div>
+
+                    {/* Admin Search Filter Input */}
+                    <div className="relative flex-grow max-w-[200px]">
+                      <Search className="absolute left-2.5 top-2 w-3.5 h-3.5 text-slate-400" />
+                      <input 
+                        type="text" 
+                        placeholder="Search Ref, recipient, way, status..." 
+                        value={adminModalTxnSearch}
+                        onChange={(e) => setAdminModalTxnSearch(e.target.value)}
+                        className="w-full pl-8 pr-6 py-1 border border-slate-200 rounded-xl text-[10px] bg-slate-50 focus:outline-none focus:bg-white text-slate-800 font-medium placeholder:text-slate-400"
+                      />
+                      {adminModalTxnSearch && (
+                        <button 
+                          onClick={() => setAdminModalTxnSearch('')}
+                          className="absolute right-2 top-1.5 text-[10px] text-slate-400 hover:text-slate-700 font-bold"
+                          title="Clear search"
+                        >
+                          ✕
+                        </button>
+                      )}
+                    </div>
+
                     <div className="flex items-center gap-2">
                       <button 
                         onClick={() => {
@@ -4018,47 +6412,93 @@ export default function LiveSimulation() {
                           <th className="py-2">Way</th>
                           <th className="py-2">Amount</th>
                           <th className="py-2">State</th>
+                          <th className="py-2">Receipt</th>
                           <th className="py-2 text-right">Timestamp</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100 font-medium text-slate-600">
-                        {transactions.filter(t => t.userId === selectedUserToView.id).map((t, index) => (
-                          <tr key={`${t.id}-${index}`}>
-                            <td className="py-2 font-mono text-[9px] text-slate-500">{t.referenceNo}</td>
-                            <td className="py-2 capitalize font-semibold text-slate-700">
-                              {t.recipient === 'System Commission Charge' ? 'Commission Charge' : t.type.replace('_', ' ')}
-                              {t.isOverdraft && (
-                                <span className="block text-[7px] font-black text-rose-600 bg-rose-50 border border-rose-100 px-1 py-0.5 rounded w-max mt-0.5 uppercase">Bank Credit</span>
-                              )}
-                            </td>
-                            <td className="py-2 font-mono text-slate-500">{t.recipient || 'N/A'}</td>
-                            <td className="py-2 font-semibold text-indigo-600 capitalize">{t.way || 'N/A'}</td>
-                            <td className="py-2 font-bold text-slate-900">
-                              ৳ {t.amount.toFixed(2)}
-                            </td>
-                            <td className="py-2">
-                              {t.status === 'approved' ? (
-                                <div className="flex flex-col items-start">
-                                  <span className="inline-flex px-1.5 py-0.5 bg-emerald-100 text-emerald-800 text-[8px] font-bold rounded">Approved</span>
-                                  {t.authPin && <span className="text-[8px] text-emerald-600 font-mono">PIN: {t.authPin}</span>}
-                                </div>
-                              ) : t.status === 'rejected' ? (
-                                <span className="inline-flex px-1.5 py-0.5 bg-red-100 text-red-800 text-[8px] font-bold rounded">Rejected</span>
-                              ) : (
-                                <span className="inline-flex px-1.5 py-0.5 bg-amber-100 text-amber-800 text-[8px] font-bold rounded animate-pulse">Pending</span>
-                              )}
-                            </td>
-                            <td className="py-2 text-slate-400 text-right font-mono text-[9px]">{t.createdAt}</td>
-                          </tr>
-                        ))}
-                        {transactions.filter(t => t.userId === selectedUserToView.id).length === 0 && (
-                          <tr>
-                            <td colSpan={7} className="text-center py-8 text-slate-400">No transactions recorded.</td>
-                          </tr>
-                        )}
+                        {(() => {
+                          const rawTxns = transactions.filter(t => t.userId === selectedUserToView.id);
+                          const filteredModalTxns = rawTxns.filter(t => {
+                            if (!adminModalTxnSearch.trim()) return true;
+                            const q = adminModalTxnSearch.toLowerCase().trim();
+                            return (
+                              t.referenceNo.toLowerCase().includes(q) ||
+                              (t.recipient && t.recipient.toLowerCase().includes(q)) ||
+                              (t.way && t.way.toLowerCase().includes(q)) ||
+                              t.type.toLowerCase().includes(q) ||
+                              t.status.toLowerCase().includes(q) ||
+                              t.amount.toString().includes(q) ||
+                              (t.authPin && t.authPin.toLowerCase().includes(q)) ||
+                              (t.createdAt && t.createdAt.toLowerCase().includes(q))
+                            );
+                          });
+
+                          if (filteredModalTxns.length === 0) {
+                            return (
+                              <tr>
+                                <td colSpan={8} className="text-center py-8 text-slate-400">
+                                  {adminModalTxnSearch.trim() ? `No transactions matching "${adminModalTxnSearch}".` : 'No transactions recorded.'}
+                                </td>
+                              </tr>
+                            );
+                          }
+
+                          return filteredModalTxns.map((t, index) => (
+                            <tr key={`${t.id}-${index}`}>
+                              <td className="py-2 font-mono text-[9px] text-slate-500">{t.referenceNo}</td>
+                              <td className="py-2 capitalize font-semibold text-slate-700">
+                                {t.recipient === 'System Commission Charge' ? 'Commission Charge' : t.type.replace('_', ' ')}
+                                {t.isOverdraft && (
+                                  <span className="block text-[7px] font-black text-rose-600 bg-rose-50 border border-rose-100 px-1 py-0.5 rounded w-max mt-0.5 uppercase">Bank Credit</span>
+                                )}
+                              </td>
+                              <td className="py-2 font-mono text-slate-500">{t.recipient || 'N/A'}</td>
+                              <td className="py-2 font-semibold text-indigo-600 capitalize">{t.way || 'N/A'}</td>
+                              <td className="py-2 font-bold text-slate-900">
+                                ৳ {t.amount.toFixed(2)}
+                              </td>
+                              <td className="py-2">
+                                {t.status === 'approved' ? (
+                                  <div className="flex flex-col items-start gap-0.5">
+                                    <span className="inline-flex px-1.5 py-0.5 bg-emerald-100 text-emerald-800 text-[8px] font-bold rounded">Approved</span>
+                                    <span className="text-[8px] text-emerald-600 font-mono font-bold">PIN: {t.authPin || '123456'}</span>
+                                  </div>
+                                ) : t.status === 'rejected' ? (
+                                  <span className="inline-flex px-1.5 py-0.5 bg-red-100 text-red-800 text-[8px] font-bold rounded">Rejected</span>
+                                ) : (
+                                  <span className="inline-flex px-1.5 py-0.5 bg-amber-100 text-amber-800 text-[8px] font-bold rounded animate-pulse">Pending</span>
+                                )}
+                              </td>
+                              <td className="py-2">
+                                <button
+                                  type="button"
+                                  onClick={() => setSelectedReceiptTxn(t)}
+                                  className={`inline-flex items-center gap-0.5 text-[8px] font-extrabold px-2 py-0.5 rounded-full transition cursor-pointer border ${
+                                    t.status === 'approved'
+                                      ? 'text-sky-700 hover:text-sky-900 bg-sky-50 hover:bg-sky-100 border-sky-200'
+                                      : t.status === 'rejected'
+                                      ? 'text-rose-700 hover:text-rose-900 bg-rose-50 hover:bg-rose-100 border-rose-200'
+                                      : 'text-amber-700 hover:text-amber-900 bg-amber-50 hover:bg-amber-100 border-amber-200'
+                                  }`}
+                                  title="Tap to View, Share & Print Voucher Receipt"
+                                >
+                                  <FileText className="w-2.5 h-2.5 text-current" />
+                                  <span>{t.status === 'rejected' ? 'Receipt / Comment 📄' : 'Receipt PDF 📄'}</span>
+                                </button>
+                              </td>
+                              <td className="py-2 text-slate-400 text-right font-mono text-[9px]">{t.createdAt}</td>
+                            </tr>
+                          ));
+                        })()}
                       </tbody>
                     </table>
                   </div>
+                </div>
+
+                {/* Inquiry & Support Ticket System for Admin inspecting User Dashboard */}
+                <div className="lg:col-span-12">
+                  {renderInquirySystem(selectedUserToView, true)}
                 </div>
 
               </div>
@@ -4130,6 +6570,7 @@ export default function LiveSimulation() {
                         <th className="p-2">Destination Mobile</th>
                         <th className="p-2">Amount (TK)</th>
                         <th className="p-2">Settlement State</th>
+                        <th className="p-2">Receipt</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 text-slate-700">
@@ -4144,6 +6585,17 @@ export default function LiveSimulation() {
                             {t.status === 'approved' && t.authPin && (
                               <span className="block text-[9px] text-slate-500 font-mono font-normal">PIN: {t.authPin}</span>
                             )}
+                          </td>
+                          <td className="p-2">
+                            <button
+                              type="button"
+                              onClick={() => setSelectedReceiptTxn(t)}
+                              className="inline-flex items-center gap-1 text-[9px] font-extrabold text-sky-700 hover:text-sky-900 bg-sky-50 hover:bg-sky-100 border border-sky-200 px-2 py-0.5 rounded-full transition cursor-pointer"
+                              title="Tap to View Voucher Receipt"
+                            >
+                              <FileText className="w-2.5 h-2.5 text-sky-600" />
+                              <span>Receipt 📄</span>
+                            </button>
                           </td>
                         </tr>
                       ))}
@@ -4430,6 +6882,436 @@ export default function LiveSimulation() {
                   className="py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow transition cursor-pointer"
                 >
                   Create Account
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* SINGLE TRANSACTION RECEIPT / PDF VOUCHER MODAL */}
+      {selectedReceiptTxn && (
+        <div className="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-[70] flex items-center justify-center p-4 overflow-y-auto animate-fade-in">
+          <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-slate-200 overflow-hidden text-left my-8">
+            
+            {/* Modal Navigation Header */}
+            <div className="bg-slate-900 text-white p-4 flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <FileText className="w-5 h-5 text-sky-400" />
+                <h3 className="text-sm font-bold tracking-tight">Official Payment Voucher Slip</h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedReceiptTxn(null)}
+                className="text-slate-400 hover:text-white p-1 rounded-lg transition cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Printable Receipt Paper Card */}
+            <div id="printable-receipt-card" className="p-6 space-y-4 bg-slate-50 border-b border-slate-200">
+              
+              {/* Header Branding */}
+              <div className="text-center pb-3 border-b border-slate-200/80 space-y-1">
+                <div className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-emerald-100 text-emerald-700 font-black text-lg mb-1 shadow-sm">
+                  ✓
+                </div>
+                <h2 className="text-base font-black text-slate-900 tracking-tight">MASHUD TELECOM</h2>
+                <p className="text-[10px] font-extrabold text-sky-700 uppercase tracking-widest pt-0.5">Electronic Payment Receipt Voucher</p>
+                <span className={`inline-block mt-1 px-3 py-0.5 border text-[10px] font-black rounded-full uppercase tracking-wider ${
+                  selectedReceiptTxn.status === 'approved' 
+                    ? 'bg-emerald-100 text-emerald-800 border-emerald-300' 
+                    : selectedReceiptTxn.status === 'rejected'
+                    ? 'bg-rose-100 text-rose-800 border-rose-300'
+                    : 'bg-amber-100 text-amber-800 border-amber-300'
+                }`}>
+                  ✓ {selectedReceiptTxn.status === 'approved' ? 'Taka already send' : selectedReceiptTxn.status.toUpperCase()}
+                </span>
+              </div>
+
+              {/* Voucher Metadata */}
+              <div className="bg-white rounded-xl p-3.5 border border-slate-200/80 space-y-2 text-xs">
+                <div className="flex justify-between items-center py-1 border-b border-slate-100">
+                  <span className="text-slate-500 text-[11px] font-medium">Reference ID:</span>
+                  <span className="font-mono font-black text-slate-900 text-xs">{selectedReceiptTxn.referenceNo}</span>
+                </div>
+
+                <div className="flex justify-between items-center py-1 border-b border-slate-100">
+                  <span className="text-slate-500 text-[11px] font-medium">Date & Time:</span>
+                  <span className="font-mono text-slate-700 font-semibold text-[11px]">{selectedReceiptTxn.createdAt}</span>
+                </div>
+
+                <div className="flex justify-between items-center py-1 border-b border-slate-100">
+                  <span className="text-slate-500 text-[11px] font-medium">Recipient Mobile:</span>
+                  <span className="font-mono font-black text-slate-900 text-xs">{selectedReceiptTxn.recipient || selectedReceiptTxn.userMobile || 'N/A'}</span>
+                </div>
+
+                <div className="flex justify-between items-center py-1 border-b border-slate-100">
+                  <span className="text-slate-500 text-[11px] font-medium">Transaction Type:</span>
+                  <span className="font-bold text-slate-800 capitalize text-[11px]">
+                    {selectedReceiptTxn.type.replace('_', ' ')}
+                  </span>
+                </div>
+
+                <div className="flex justify-between items-center py-1 border-b border-slate-100">
+                  <span className="text-slate-500 text-[11px] font-medium">Payment Way:</span>
+                  <span className="font-extrabold text-indigo-600 uppercase text-[11px]">{selectedReceiptTxn.way || 'BKASH'}</span>
+                </div>
+
+                <div className="flex justify-between items-center pt-2 text-rose-700 font-bold">
+                  <span className="text-slate-800 text-xs font-black uppercase">Send Money Amount:</span>
+                  <span className="font-mono text-base font-black text-rose-700">
+                    {selectedReceiptTxn.status === 'rejected' ? '0000 (৳ 0.00 TK)' : `- ৳ ${selectedReceiptTxn.amount.toFixed(2)} TK`}
+                  </span>
+                </div>
+
+                {/* Security PIN Code Box */}
+                <div className="mt-2 bg-emerald-50 border border-emerald-200 rounded-lg p-2.5 flex items-center justify-between">
+                  <div>
+                    <span className="text-[10px] font-bold text-emerald-800 block uppercase">Authorization PIN Code</span>
+                    <span className="text-[9px] text-emerald-600 font-medium">Official Security Verification Key</span>
+                  </div>
+                  <span className="font-mono text-sm font-black text-emerald-800 bg-white px-2.5 py-1 rounded border border-emerald-300 shadow-2xs min-w-[50px] inline-block text-center min-h-[26px]">
+                    {selectedReceiptTxn.status === 'rejected' ? '' : (selectedReceiptTxn.authPin || '123456')}
+                  </span>
+                </div>
+
+                {/* Rejection Comment Box */}
+                {selectedReceiptTxn.rejectionComment && (
+                  <div className="mt-2 bg-rose-50 border border-rose-200 rounded-lg p-2.5 space-y-1 text-left">
+                    <span className="text-[10px] font-bold text-rose-800 block uppercase">Rejection Reason / Comment</span>
+                    <p className="text-[11px] font-medium text-rose-950 leading-relaxed font-sans bg-white p-2 rounded border border-rose-100">
+                      {selectedReceiptTxn.rejectionComment}
+                    </p>
+                  </div>
+                )}
+
+                {/* Number Correction & Re-Send Button */}
+                {selectedReceiptTxn.status === 'rejected' && (
+                  <div className="mt-3 pt-1">
+                    <button
+                      type="button"
+                      onClick={() => handleNumberCorrectionAndResend(selectedReceiptTxn)}
+                      className="w-full py-2.5 px-4 bg-gradient-to-r from-amber-500 via-orange-500 to-rose-600 hover:from-amber-600 hover:via-orange-600 hover:to-rose-700 text-white font-black text-xs rounded-xl shadow-md hover:shadow-lg transition flex items-center justify-center space-x-2 cursor-pointer active:scale-98 border border-amber-300/40"
+                    >
+                      <RotateCcw className="w-4 h-4 text-white" />
+                      <span className="tracking-wide">Number Correction & Re-Send</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Footer Note */}
+              <div className="text-center text-xs font-bold text-slate-700 pt-1 tracking-wide">
+                Thank You
+              </div>
+            </div>
+
+            {/* Action Sharing Buttons */}
+            <div className="p-4 bg-white space-y-3">
+              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider text-center">Share & Printable Options</p>
+              
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                {/* WhatsApp Share */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    const userObj = users.find(u => u.id === selectedReceiptTxn.userId) || currentSessionUser;
+                    handleShareWhatsApp(selectedReceiptTxn, userObj);
+                  }}
+                  className="p-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl flex items-center justify-center space-x-1.5 transition cursor-pointer shadow-sm"
+                >
+                  <MessageCircle className="w-4 h-4" />
+                  <span>Send WhatsApp</span>
+                </button>
+
+                {/* Email Share */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    const userObj = users.find(u => u.id === selectedReceiptTxn.userId) || currentSessionUser;
+                    handleShareEmail(selectedReceiptTxn, userObj);
+                  }}
+                  className="p-2.5 bg-sky-600 hover:bg-sky-700 text-white font-bold rounded-xl flex items-center justify-center space-x-1.5 transition cursor-pointer shadow-sm"
+                >
+                  <Mail className="w-4 h-4" />
+                  <span>Send Email</span>
+                </button>
+
+                {/* Download PDF */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    const userObj = users.find(u => u.id === selectedReceiptTxn.userId) || currentSessionUser;
+                    handleDownloadSingleReceiptPDF(selectedReceiptTxn, userObj);
+                  }}
+                  className="p-2.5 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-xl flex items-center justify-center space-x-1.5 transition cursor-pointer shadow-sm"
+                >
+                  <Download className="w-4 h-4" />
+                  <span>Save PDF Slip</span>
+                </button>
+
+                {/* Print Receipt */}
+                <button
+                  type="button"
+                  onClick={() => handlePrintReceipt(selectedReceiptTxn)}
+                  className="p-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl flex items-center justify-center space-x-1.5 transition cursor-pointer shadow-sm"
+                >
+                  <Printer className="w-4 h-4" />
+                  <span>Print Receipt</span>
+                </button>
+              </div>
+
+              {/* Copy Text Summary */}
+              <button
+                type="button"
+                onClick={() => {
+                  const userObj = users.find(u => u.id === selectedReceiptTxn.userId) || currentSessionUser;
+                  handleCopyReceiptText(selectedReceiptTxn, userObj);
+                }}
+                className={`w-full py-2.5 font-bold rounded-xl flex items-center justify-center space-x-1.5 text-xs transition cursor-pointer border shadow-xs ${
+                  isReceiptCopied
+                    ? 'bg-emerald-600 text-white border-emerald-700 font-extrabold scale-[0.99]'
+                    : 'bg-slate-100 hover:bg-slate-200 text-slate-800 border-slate-300'
+                }`}
+              >
+                {isReceiptCopied ? (
+                  <>
+                    <Check className="w-4 h-4 text-white" />
+                    <span>✓ COPIED TO CLIPBOARD!</span>
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-3.5 h-3.5 text-slate-600" />
+                    <span>Copy Full Receipt Text</span>
+                  </>
+                )}
+              </button>
+
+              {/* Toggle Manual Text View */}
+              <div className="pt-1 text-center">
+                <button
+                  type="button"
+                  onClick={() => setShowRawText(!showRawText)}
+                  className="text-[10px] text-slate-500 hover:text-slate-800 underline font-semibold cursor-pointer"
+                >
+                  {showRawText ? 'Hide Raw Receipt Text' : 'View / Manual Copy Raw Text Box'}
+                </button>
+              </div>
+
+              {showRawText && (
+                <div className="space-y-1.5 animate-fade-in pt-1">
+                  <textarea
+                    readOnly
+                    rows={8}
+                    onClick={(e) => (e.target as HTMLTextAreaElement).select()}
+                    value={getReceiptShareText(selectedReceiptTxn, users.find(u => u.id === selectedReceiptTxn.userId) || currentSessionUser)}
+                    className="w-full p-2.5 bg-slate-900 text-emerald-400 font-mono text-[10px] rounded-xl border border-slate-700 focus:outline-none focus:ring-1 focus:ring-emerald-500 select-all"
+                  />
+                  <p className="text-[9px] text-slate-400 text-center">Tap inside text area to select all & copy manually.</p>
+                </div>
+              )}
+            </div>
+
+          </div>
+        </div>
+      )}
+
+      {/* USER PROFILE DETAILS MODAL */}
+      {isProfileModalOpen && currentSessionUser && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl shadow-2xl border border-slate-200 max-w-lg w-full overflow-hidden animate-in zoom-in-95 duration-200">
+            {/* Header */}
+            <div className="p-5 bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 rounded-2xl bg-blue-600/30 border border-blue-400/40 text-blue-300 flex items-center justify-center">
+                  <User className="w-5 h-5 text-blue-400" />
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-sm text-white">User Profile Details</h3>
+                  <p className="text-[10px] text-slate-300">View and update your personal account info</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsProfileModalOpen(false)}
+                className="p-1.5 text-slate-400 hover:text-white rounded-xl hover:bg-white/10 transition cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Profile Content */}
+            <div className="p-6 space-y-5 max-h-[80vh] overflow-y-auto">
+              <div className="flex items-center space-x-4 p-4 bg-slate-50 rounded-2xl border border-slate-200/80">
+                <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-700 text-white font-black text-2xl flex items-center justify-center shadow-md border-2 border-white">
+                  {currentSessionUser.fullName.charAt(0).toUpperCase()}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center space-x-2">
+                    <h4 className="font-extrabold text-slate-900 text-base truncate">{currentSessionUser.fullName}</h4>
+                    <span className="bg-emerald-100 text-emerald-800 text-[9px] font-black px-2 py-0.5 rounded-full border border-emerald-200">
+                      Active
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500 font-mono mt-0.5">{currentSessionUser.email}</p>
+                  <p className="text-[10px] text-slate-400 mt-0.5">Role: <span className="font-bold text-slate-700 uppercase">{currentSessionUser.role}</span> | Wallet ID: <span className="font-mono font-bold text-blue-600">#MT-{currentSessionUser.id.toUpperCase().split('-')[1] || '89042'}</span></p>
+                </div>
+              </div>
+
+              {/* Form to edit details */}
+              <form onSubmit={handleSaveProfileDetails} className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Full Name</label>
+                    <input
+                      type="text"
+                      value={profileNameInput}
+                      onChange={(e) => setProfileNameInput(e.target.value)}
+                      required
+                      className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Mobile Number</label>
+                    <input
+                      type="tel"
+                      value={profileMobileInput}
+                      onChange={(e) => setProfileMobileInput(e.target.value)}
+                      className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 p-3 bg-blue-50/60 rounded-2xl border border-blue-100 text-xs">
+                  <div>
+                    <span className="text-[10px] text-slate-500 font-bold uppercase block">Current Balance</span>
+                    <span className="font-extrabold text-emerald-700 font-mono text-sm">৳ {currentSessionUser.balance.toFixed(2)}</span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-slate-500 font-bold uppercase block">Security PIN</span>
+                    <span className="font-mono font-extrabold text-blue-700 text-sm">123456</span>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-end space-x-2 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsProfileModalOpen(false)}
+                    className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-extrabold rounded-xl shadow-md transition cursor-pointer"
+                  >
+                    Save Changes
+                  </button>
+                </div>
+              </form>
+
+              {/* Quick Actions inside Profile Modal */}
+              <div className="pt-3 border-t border-slate-100 space-y-2">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Quick Account Tools</span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsProfileModalOpen(false);
+                      setIsChangePasswordModalOpen(true);
+                    }}
+                    className="p-2.5 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 rounded-xl text-xs font-bold transition flex items-center justify-center space-x-2 cursor-pointer"
+                  >
+                    <Lock className="w-4 h-4 text-amber-600" />
+                    <span>Change Password</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsProfileModalOpen(false);
+                      handleDownloadPDFStatement(
+                        currentSessionUser,
+                        transactions.filter(t => t.userId === currentSessionUser.id),
+                        userCommissionMultiplier
+                      );
+                    }}
+                    className="p-2.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 rounded-xl text-xs font-bold transition flex items-center justify-center space-x-2 cursor-pointer"
+                  >
+                    <FileText className="w-4 h-4 text-emerald-600" />
+                    <span>Download e-Statement</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* CHANGE PASSWORD MODAL */}
+      {isChangePasswordModalOpen && currentSessionUser && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl shadow-2xl border border-slate-200 max-w-md w-full overflow-hidden animate-in zoom-in-95 duration-200">
+            {/* Header */}
+            <div className="p-5 bg-gradient-to-r from-slate-900 via-amber-950 to-slate-900 text-white flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 rounded-2xl bg-amber-500/30 border border-amber-400/40 text-amber-300 flex items-center justify-center">
+                  <Lock className="w-5 h-5 text-amber-400" />
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-sm text-white">Change Security Password</h3>
+                  <p className="text-[10px] text-slate-300">Update password for account security</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsChangePasswordModalOpen(false)}
+                className="p-1.5 text-slate-400 hover:text-white rounded-xl hover:bg-white/10 transition cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Form */}
+            <form onSubmit={handleChangeUserPassword} className="p-6 space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">New Security Password</label>
+                <input
+                  type="password"
+                  value={newPasswordInput}
+                  onChange={(e) => setNewPasswordInput(e.target.value)}
+                  required
+                  placeholder="At least 4 characters"
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Confirm New Password</label>
+                <input
+                  type="password"
+                  value={confirmNewPasswordInput}
+                  onChange={(e) => setConfirmNewPasswordInput(e.target.value)}
+                  required
+                  placeholder="Re-enter new password"
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
+                />
+              </div>
+
+              <div className="flex items-center justify-end space-x-2 pt-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setIsChangePasswordModalOpen(false)}
+                  className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2.5 bg-amber-600 hover:bg-amber-700 text-white text-xs font-extrabold rounded-xl shadow-md transition cursor-pointer"
+                >
+                  Update Password
                 </button>
               </div>
             </form>

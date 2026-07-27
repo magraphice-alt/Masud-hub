@@ -27,6 +27,18 @@ export default function CodeExplorer() {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const handleDownloadSingleFile = () => {
+    const blob = new Blob([selectedFile.code], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = selectedFile.name;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
   const handleDownloadZip = async () => {
     try {
       setZipping(true);
@@ -164,22 +176,31 @@ export default function CodeExplorer() {
             </div>
           </div>
 
-          <button
-            onClick={handleCopy}
-            className="text-slate-400 hover:text-white bg-slate-950 hover:bg-slate-800 px-3 py-1.5 rounded-lg text-xs font-medium border border-slate-800 flex items-center space-x-2 transition duration-150 cursor-pointer"
-          >
-            {copied ? (
-              <>
-                <Check className="w-3.5 h-3.5 text-emerald-400" />
-                <span className="text-emerald-400 text-[11px]">Copied!</span>
-              </>
-            ) : (
-              <>
-                <Copy className="w-3.5 h-3.5" />
-                <span className="text-[11px]">Copy Source</span>
-              </>
-            )}
-          </button>
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={handleDownloadSingleFile}
+              className="text-slate-400 hover:text-white bg-slate-950 hover:bg-slate-800 px-3 py-1.5 rounded-lg text-xs font-medium border border-slate-800 flex items-center space-x-1.5 transition duration-150 cursor-pointer"
+            >
+              <Download className="w-3.5 h-3.5 text-sky-400" />
+              <span className="text-[11px]">Download File</span>
+            </button>
+            <button
+              onClick={handleCopy}
+              className="text-slate-400 hover:text-white bg-slate-950 hover:bg-slate-800 px-3 py-1.5 rounded-lg text-xs font-medium border border-slate-800 flex items-center space-x-2 transition duration-150 cursor-pointer"
+            >
+              {copied ? (
+                <>
+                  <Check className="w-3.5 h-3.5 text-emerald-400" />
+                  <span className="text-emerald-400 text-[11px]">Copied!</span>
+                </>
+              ) : (
+                <>
+                  <Copy className="w-3.5 h-3.5" />
+                  <span className="text-[11px]">Copy Source</span>
+                </>
+              )}
+            </button>
+          </div>
         </div>
 
         {/* Code Content */}

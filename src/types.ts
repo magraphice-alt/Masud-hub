@@ -21,6 +21,7 @@ export interface SimulatedUser {
   createdAt: string;
   adminPin?: string; // Set during admin registration
   commissionMultiplier?: number;
+  status?: 'active' | 'denied' | 'blocked';
 }
 
 export interface SimulatedTransaction {
@@ -38,6 +39,7 @@ export interface SimulatedTransaction {
   authPin?: string; // Manual authorization PIN submitted by admin
   way?: string; // bkash, Nagad, Roket, Flexi, Other or deposit method
   isOverdraft?: boolean; // True if submitted with low balance and pending admin credit authorization
+  rejectionComment?: string; // Rejection reason / comment submitted by admin
 }
 
 export interface SimulatedNotification {
@@ -56,6 +58,30 @@ export interface SimulatedActivityLog {
   action: string;
   ipAddress: string;
   createdAt: string;
+}
+
+export interface SimulatedInquiryMessage {
+  id: string;
+  senderRole: 'user' | 'admin';
+  senderName: string;
+  message: string;
+  attachmentName?: string;
+  attachmentDataUrl?: string;
+  createdAt: string;
+}
+
+export interface SimulatedInquiry {
+  id: string;
+  userId: string;
+  userEmail: string;
+  userMobile: string;
+  userName: string;
+  subject: string;
+  category: 'Transaction Issue' | 'Deposit Query' | 'Send Money Problem' | 'Account / Security' | 'General Inquiry';
+  status: 'open' | 'in_progress' | 'resolved' | 'closed';
+  createdAt: string;
+  updatedAt: string;
+  messages: SimulatedInquiryMessage[];
 }
 
 export interface ThemeStats {

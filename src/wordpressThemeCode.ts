@@ -116,7 +116,29 @@ function mashud_telecom_enqueue_assets() {
 }
 add_action( 'wp_enqueue_scripts', 'mashud_telecom_enqueue_assets' );
 
-// 2. Custom SQL Database Schema Setup (dbDelta)
+// 2. Custom Roles Registration & Theme Setup
+function mashud_telecom_register_roles() {
+    // Add custom Telecom User role
+    add_role( 'mashud_user', __( 'Mashud Telecom User', 'mashud-telecom' ), array(
+        'read' => true,
+        'upload_files' => true,
+    ));
+
+    // Add custom Telecom Administrator role
+    add_role( 'mashud_admin', __( 'Mashud Telecom Administrator', 'mashud-telecom' ), array(
+        'read' => true,
+        'edit_posts' => true,
+        'delete_posts' => true,
+        'publish_posts' => true,
+        'upload_files' => true,
+        'manage_options' => true,
+        'list_users' => true,
+        'promote_users' => true,
+    ));
+}
+add_action( 'init', 'mashud_telecom_register_roles' );
+
+// 3. Custom SQL Database Schema Setup (dbDelta) & Seed Data
 function mashud_telecom_create_database_tables() {
     global $wpdb;
     $charset_collate = $wpdb->get_charset_collate();
@@ -197,10 +219,103 @@ function mashud_telecom_create_database_tables() {
         PRIMARY KEY  (id)
     ) $charset_collate;";
     dbDelta( $sql_notifications );
+
+    // Table 6: Global Settings & Configuration
+    $table_settings = $wpdb->prefix . 'mashud_settings';
+    $sql_settings = "CREATE TABLE $table_settings (
+        id bigint(20) NOT NULL AUTO_INCREMENT,
+        setting_key varchar(100) NOT NULL,
+        setting_value text NOT NULL,
+        updated_at datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        PRIMARY KEY  (id),
+        UNIQUE KEY setting_key (setting_key)
+    ) $charset_collate;";
+    dbDelta( $sql_settings );
+
+    // Seed default admin account if table is empty
+    $admin_count = $wpdb->get_var( "SELECT COUNT(*) FROM $table_users WHERE role = 'admin'" );
+    if ( $admin_count == 0 ) {
+        $default_hash = password_hash( 'admin123', PASSWORD_BCRYPT );
+        $wpdb->insert(
+            $table_users,
+            array(
+                'full_name'     => 'System Admin',
+                'email'         => 'admin@mashudtelecom.com',
+                'mobile'        => '01700000000',
+                'password_hash' => $default_hash,
+                'balance'       => 100000.00,
+                'role'          => 'admin',
+                'admin_pin'     => '123456',
+                'status'        => 'active'
+            ),
+            array( '%s', '%s', '%s', '%s', '%f', '%s', '%s', '%s' )
+        );
+    }
+
+    // Seed default commission rate setting if missing
+    $wpdb->query( "INSERT IGNORE INTO $table_settings (setting_key, setting_value) VALUES ('commission_rate', '5.00')" );
+
+    // Auto create theme pages and map custom page templates on theme switch
+    mashud_auto_create_pages();
 }
 add_action( 'after_switch_theme', 'mashud_telecom_create_database_tables' );
+add_action( 'admin_init', 'mashud_telecom_create_database_tables' );
 
-// 3. User & Admin Dynamic Session Handlers
+// Auto Page Generator Helper
+function mashud_auto_create_pages() {
+    $pages = array(
+        'User Login' => array(
+            'slug' => 'user-login',
+            'template' => 'page-user-login.php'
+        ),
+        'User Register' => array(
+            'slug' => 'user-register',
+            'template' => 'page-user-register.php'
+        ),
+        'User Dashboard' => array(
+            'slug' => 'user-dashboard',
+            'template' => 'page-user-dashboard.php'
+        ),
+        'Admin Login' => array(
+            'slug' => 'admin-login',
+            'template' => 'page-admin-login.php'
+        ),
+        'Admin Register' => array(
+            'slug' => 'admin-register',
+            'template' => 'page-admin-register.php'
+        ),
+        'Admin Dashboard' => array(
+            'slug' => 'admin-dashboard',
+            'template' => 'page-admin-dashboard.php'
+        ),
+        'Print Statement' => array(
+            'slug' => 'print-statement',
+            'template' => 'page-print-statement.php'
+        ),
+        'User Statement' => array(
+            'slug' => 'user-statement',
+            'template' => 'page-user-statement.php'
+        ),
+    );
+
+    foreach ( $pages as $title => $data ) {
+        $page_check = get_page_by_path( $data['slug'] );
+        if ( ! isset( $page_check->ID ) ) {
+            $page_id = wp_insert_post( array(
+                'post_title'     => $title,
+                'post_name'      => $data['slug'],
+                'post_type'      => 'page',
+                'post_status'    => 'publish',
+                'comment_status' => 'closed',
+            ) );
+            if ( $page_id && ! is_wp_error( $page_id ) ) {
+                update_post_meta( $page_id, '_wp_page_template', $data['template'] );
+            }
+        }
+    }
+}
+
+// 4. User & Admin Dynamic Session Handlers
 function start_mashud_session() {
     if ( ! session_id() ) {
         session_start();
@@ -2944,7 +3059,10 @@ get_header();
 // 1. Calculations: Dynamic Stat Summaries
 $total_clients = $wpdb->get_var( "SELECT COUNT(*) FROM $users_table WHERE role = 'user'" );
 $total_dep_sum = $wpdb->get_var( "SELECT SUM(amount) FROM $deposits_table WHERE status = 'approved'" );
-$total_dep_sum = $total_dep_sum ? $total_dep_sum : 0;
+$total_dep_sum = $total_dep_sum ? floatval($total_dep_sum) : 0;
+
+$total_send_money_approved = $wpdb->get_var( "SELECT SUM(amount) FROM $txns_table WHERE type = 'send_money' AND status = 'approved' AND (recipient_mobile IS NOT NULL AND recipient_mobile != 'System Commission Charge')" );
+$total_send_money_approved = $total_send_money_approved ? floatval($total_send_money_approved) : 0;
 
 $pending_deposits = $wpdb->get_results( "SELECT d.*, u.full_name, u.mobile FROM $deposits_table d JOIN $users_table u ON d.user_id = u.id WHERE d.status = 'pending' ORDER BY d.created_at DESC" );
 $pending_transfers = $wpdb->get_results( "SELECT t.*, u.full_name, u.mobile FROM $txns_table t JOIN $users_table u ON t.user_id = u.id WHERE t.type = 'send_money' AND t.status = 'pending' ORDER BY t.created_at DESC" );
@@ -2959,7 +3077,8 @@ if ( !empty($search_query) ) {
 } else {
     $client_directory = $wpdb->get_results( "SELECT * FROM $users_table ORDER BY created_at DESC LIMIT 30" );
 }
-$comm_rate = get_option('mashud_commission_rate', '1.85');
+$comm_rate = get_option('mashud_commission_rate', '7.5');
+$total_system_commission = ($total_send_money_approved / 1000) * floatval($comm_rate);
 ?>
 
 <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 flex-grow">
@@ -3150,20 +3269,27 @@ $comm_rate = get_option('mashud_commission_rate', '1.85');
                 <h2 class="text-base font-bold text-slate-900 font-display">Commission & Security Parameters</h2>
                 <div class="p-3 bg-slate-50 border border-slate-100 rounded-lg space-y-2 text-xs">
                     <div class="flex justify-between font-semibold">
-                        <span>Current Commission Rate:</span>
-                        <span id="display-comm-rate" class="text-sky-600"><?php echo esc_html($comm_rate); ?>% Per Transaction</span>
+                        <span>Commission Rate:</span>
+                        <span id="display-comm-rate" class="text-indigo-600 font-bold">৳ <?php echo esc_html($comm_rate); ?> per 1000 TK</span>
                     </div>
                     <div class="flex justify-between font-semibold">
-                        <span>System Reserves:</span>
-                        <span class="text-emerald-600"><?php echo number_format($total_dep_sum * ($comm_rate / 100), 2); ?> TK</span>
+                        <span>Total Approved Send Money:</span>
+                        <span class="text-rose-600 font-bold">৳ <?php echo number_format($total_send_money_approved, 2); ?></span>
+                    </div>
+                    <div class="flex justify-between font-semibold pt-1 border-t border-slate-200">
+                        <span>Total Earned Commission:</span>
+                        <span class="text-emerald-600 font-black">৳ <?php echo number_format($total_system_commission, 2); ?></span>
                     </div>
                 </div>
                 <div class="space-y-3">
-                    <label class="block text-[10px] font-bold text-slate-500 uppercase">Adjust Base Rate (%)</label>
+                    <label class="block text-[10px] font-bold text-slate-500 uppercase">Adjust Rate (TK per 1000 Approved Send Money)</label>
                     <div class="flex space-x-2">
                         <input type="number" id="commission-rate" value="<?php echo esc_attr($comm_rate); ?>" step="0.01" class="block w-24 p-2 border border-slate-300 rounded-lg text-xs bg-slate-50 font-bold">
-                        <button onclick="updateCommissionRate()" class="bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold py-2 px-3 rounded-lg flex-grow transition shadow cursor-pointer">Apply Rates</button>
+                        <button onclick="updateCommissionRate()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold py-2 px-3 rounded-lg flex-grow transition shadow cursor-pointer">Apply Rate</button>
                     </div>
+                    <p class="text-[9px] text-slate-400 leading-normal">
+                        Note: Commission is strictly calculated ONLY from Approved Send Money transfers. No other transaction types generate or contribute to commission calculations.
+                    </p>
                     <div id="commission-rate-msg" class="text-xs text-center font-bold hidden"></div>
                 </div>
             </div>
