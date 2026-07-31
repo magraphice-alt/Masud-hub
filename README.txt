@@ -1,6 +1,6 @@
 Theme Name: Mashud Telecom
 Author: magraphice
-Version: 2.0.0
+Version: 1.0.0
 Description: Installable modern digital banking WordPress Theme code package with core system controller.
 
 Instructions:
