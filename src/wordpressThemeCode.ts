@@ -2354,7 +2354,7 @@ if ( isset($_GET['export']) && ($_GET['export'] === 'pdf' || $_GET['export'] ===
                     <table style="margin-left: auto; font-size: 10px; text-align: left; border-spacing: 0 3px;">
                         <tr><td style="padding-right: 10px; font-weight: bold;">Currency</td><td>: BDT</td></tr>
                         <tr><td style="padding-right: 10px; font-weight: bold;">Issue Date</td><td>: <?php echo date('M d, Y'); ?></td></tr>
-                        <tr><td style="padding-right: 10px; font-weight: bold;">Current Balance</td><td>: ৳ <?php echo number_format($user_data->balance, 2); ?></td></tr>
+                        <tr><td style="padding-right: 10px; font-weight: bold;">Current Balance</td><td>: <span style="background-color: #ffeb3b; color: #0f172a; padding: 2px 6px; border-radius: 4px; font-weight: bold; border: 1px solid #ca8a04;">৳ <?php echo number_format($user_data->balance, 2); ?></span></td></tr>
                     </table>
                 </td>
             </tr>
@@ -2930,7 +2930,7 @@ if ( isset($_GET['export']) && ($_GET['export'] === 'pdf' || $_GET['export'] ===
                     <table style="margin-left: auto; font-size: 10px; text-align: left; border-spacing: 0 3px;">
                         <tr><td style="padding-right: 10px; font-weight: bold;">Currency</td><td>: BDT</td></tr>
                         <tr><td style="padding-right: 10px; font-weight: bold;">Issue Date</td><td>: <?php echo date('M d, Y'); ?></td></tr>
-                        <tr><td style="padding-right: 10px; font-weight: bold;">Current Balance</td><td>: ৳ <?php echo number_format($target_user->balance, 2); ?></td></tr>
+                        <tr><td style="padding-right: 10px; font-weight: bold;">Current Balance</td><td>: <span style="background-color: #ffeb3b; color: #0f172a; padding: 2px 6px; border-radius: 4px; font-weight: bold; border: 1px solid #ca8a04;">৳ <?php echo number_format($target_user->balance, 2); ?></span></td></tr>
                     </table>
                 </td>
             </tr>

@@ -21,7 +21,7 @@ export interface SimulatedUser {
   createdAt: string;
   adminPin?: string; // Set during admin registration
   commissionMultiplier?: number;
-  status?: 'active' | 'denied' | 'blocked';
+  status?: 'active' | 'pending' | 'denied' | 'blocked';
 }
 
 export interface SimulatedTransaction {

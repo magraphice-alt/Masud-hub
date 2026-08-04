@@ -1,6 +1,6 @@
 {
-  "name": "Mashud Telecom Theme Hub",
-  "description": "An interactive live preview, simulation, and WordPress Theme source code generator for Mashud Telecom, featuring digital banking widgets, role-based dashboards, and a ZIP download system.",
+  "name": "Masud Telecom",
+  "description": "Digital Telecom Web Application by Jaber featuring client wallet management, recharge services, admin controls, and cloud database persistence.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }
