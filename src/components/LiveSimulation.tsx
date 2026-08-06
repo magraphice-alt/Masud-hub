@@ -1051,8 +1051,8 @@ export default function LiveSimulation() {
   const [appliedFilterType, setAppliedFilterType] = useState('all');
   const [appliedFilterCustMobile, setAppliedFilterCustMobile] = useState('');
 
-  // User Dashboard Navigation View Tab (All/Overview, Deposit, Search)
-  const [userTabMode, setUserTabMode] = useState<'all' | 'deposit' | 'search'>('all');
+  // User Dashboard Navigation View Tab (All/Overview, Send, Deposit, Search)
+  const [userTabMode, setUserTabMode] = useState<'all' | 'send' | 'deposit' | 'search'>('send');
 
   const [selectedReceiptTxn, setSelectedReceiptTxn] = useState<SimulatedTransaction | null>(null);
   const [isReceiptCopied, setIsReceiptCopied] = useState(false);
@@ -2391,6 +2391,7 @@ export default function LiveSimulation() {
     } else {
       logSimActivity(activeUser.id, activeUser.email, 'Client successfully logged in.');
       setSimAlert({ type: 'success', message: `Welcome back, ${activeUser.fullName}!` });
+      setUserTabMode('send');
       setActivePage('user-dashboard');
     }
     
@@ -4977,6 +4978,11 @@ export default function LiveSimulation() {
                       <CheckCircle className="w-3 h-3 text-emerald-600" />
                       Verified User
                     </span>
+                    <span className="bg-indigo-50 text-indigo-900 text-[10px] sm:text-xs font-black px-2.5 py-1 rounded-full border border-indigo-200/80 flex items-center gap-1.5 shadow-2xs">
+                      <Wallet className="w-3.5 h-3.5 text-indigo-600" />
+                      <span>Available Balance:</span>
+                      <span className="font-mono text-emerald-700 font-extrabold text-xs sm:text-sm">৳ {currentSessionUser.balance.toFixed(2)}</span>
+                    </span>
                   </div>
                   <div className="flex flex-wrap items-center gap-x-2 text-[11px] text-slate-500 mt-1">
                     <span className="font-bold text-slate-700">ID:</span> #MT-{currentSessionUser.id.toUpperCase().split('-')[1] || '89042'}
@@ -5111,50 +5117,7 @@ export default function LiveSimulation() {
                   </button>
                 </div>
 
-                {/* 2. DEPOSIT MENU BUTTON */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    setUserTabMode('deposit');
-                    setIsProfileDropdownOpen(false);
-                    setIsNotificationDropdownOpen(false);
-                    setTimeout(() => {
-                      document.getElementById('deposit-workspace-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                    }, 60);
-                  }}
-                  className={`hidden lg:flex px-3.5 py-2 rounded-xl text-xs font-black border transition items-center space-x-1.5 cursor-pointer shadow-xs active:scale-95 ${
-                    userTabMode === 'deposit'
-                      ? 'bg-sky-600 text-white border-sky-500 ring-2 ring-sky-300'
-                      : 'bg-black hover:bg-slate-900 text-white border-slate-800'
-                  }`}
-                  title="Deposit Request & Table"
-                >
-                  <Banknote className="w-4 h-4 text-current" />
-                  <span className="font-extrabold">Deposit</span>
-                </button>
 
-                {/* 3. SEARCH MENU BUTTON */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    setUserTabMode('search');
-                    setIsFilterDropdownOpen(true);
-                    setIsProfileDropdownOpen(false);
-                    setIsNotificationDropdownOpen(false);
-                    setTimeout(() => {
-                      document.getElementById('search-ledger-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                    }, 60);
-                  }}
-                  className={`hidden lg:flex px-3.5 py-2 rounded-xl text-xs font-black border transition items-center space-x-1.5 cursor-pointer shadow-xs active:scale-95 ${
-                    userTabMode === 'search'
-                      ? 'bg-indigo-600 text-white border-indigo-500 ring-2 ring-indigo-300'
-                      : 'bg-black hover:bg-slate-900 text-white border-slate-800'
-                  }`}
-                  title="Search Transactions Ledger"
-                >
-                  <Search className="w-4 h-4 text-current" />
-                  <span className="font-extrabold">Search</span>
-                </button>
 
                 {/* 4. NOTIFICATION MENU BUTTON (DESKTOP) */}
                 {(() => {
@@ -5398,250 +5361,345 @@ export default function LiveSimulation() {
               </div>
             </div>
 
-            {/* User Sub-Menu Navigation Tabs Bar */}
-            <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-2.5 rounded-2xl border border-slate-200 shadow-2xs">
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setUserTabMode('all')}
-                  className={`px-4 py-2 rounded-xl text-xs font-black transition flex items-center gap-2 cursor-pointer shadow-2xs active:scale-95 ${
-                    userTabMode === 'all'
-                      ? 'bg-slate-900 text-white shadow-sm ring-2 ring-slate-400'
-                      : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200'
-                  }`}
-                >
-                  <LayoutDashboard className="w-4 h-4 text-current" />
-                  <span>All Overview</span>
-                </button>
 
-                <button
-                  type="button"
-                  onClick={() => {
-                    setUserTabMode('deposit');
-                    setTimeout(() => {
-                      document.getElementById('deposit-workspace-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                    }, 60);
-                  }}
-                  className={`px-4 py-2 rounded-xl text-xs font-black transition flex items-center gap-2 cursor-pointer shadow-2xs active:scale-95 ${
-                    userTabMode === 'deposit'
-                      ? 'bg-sky-600 text-white shadow-sm ring-2 ring-sky-300'
-                      : 'bg-white hover:bg-sky-50 text-sky-800 border border-sky-200'
-                  }`}
-                >
-                  <Banknote className="w-4 h-4 text-current" />
-                  <span>Deposit</span>
-                </button>
 
-                <button
-                  type="button"
-                  onClick={() => {
-                    setUserTabMode('search');
-                    setIsFilterDropdownOpen(true);
-                    setTimeout(() => {
-                      document.getElementById('search-ledger-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                    }, 60);
-                  }}
-                  className={`px-4 py-2 rounded-xl text-xs font-black transition flex items-center gap-2 cursor-pointer shadow-2xs active:scale-95 ${
-                    userTabMode === 'search'
-                      ? 'bg-indigo-600 text-white shadow-sm ring-2 ring-indigo-300'
-                      : 'bg-white hover:bg-indigo-50 text-indigo-800 border border-indigo-200'
-                  }`}
-                >
-                  <Search className="w-4 h-4 text-current" />
-                  <span>Search</span>
-                </button>
-              </div>
 
-              <div className="text-[11px] font-bold text-slate-500 hidden md:block font-mono">
-                Active View: <span className="uppercase text-slate-900 font-black">{userTabMode === 'all' ? 'Dashboard Overview' : userTabMode === 'deposit' ? 'Deposit Management' : 'Search Ledger & PDF'}</span>
-              </div>
-            </div>
 
-            {/* Financial Summary Tables Section (User Dashboard Welcome Table - Modern Clean Non-Black Theme) */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
-              {/* Table 1: Primary Account Balances (5 Core Metrics) */}
-              <div className="lg:col-span-7 bg-white p-3.5 sm:p-4 rounded-xl border border-slate-200 shadow-sm space-y-3 w-full max-w-full overflow-hidden relative">
-                {/* Header Bar */}
-                <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
-                  <div className="flex items-center space-x-2">
-                    <div className="p-1.5 bg-indigo-100 text-indigo-700 border border-indigo-200/60 rounded-lg shadow-xs">
-                      <Wallet className="w-3.5 h-3.5" />
-                    </div>
-                    <div>
-                      <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider">Account Financial Summary</h3>
-                      <p className="text-[10px] text-slate-500 font-medium">Real-Time Wallet Metrics</p>
-                    </div>
+
+
+            {/* Web App Dashboard 4 Linked Table Cards Banner */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+              {/* Card 1: Send Money Table */}
+              <div 
+                onClick={() => {
+                  setUserTabMode('send');
+                  setTimeout(() => {
+                    document.getElementById('send-money-card')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  }, 60);
+                }}
+                className={`p-3.5 sm:p-4 rounded-2xl border transition-all cursor-pointer shadow-sm relative overflow-hidden group active:scale-[0.98] ${
+                  userTabMode === 'send'
+                    ? 'bg-gradient-to-br from-emerald-900 via-emerald-950 to-slate-900 text-white border-emerald-500/80 ring-2 ring-emerald-400'
+                    : 'bg-white hover:bg-emerald-50/60 text-slate-800 border-emerald-200 hover:border-emerald-400'
+                }`}
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <span className={`text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-full border ${
+                    userTabMode === 'send' ? 'bg-emerald-500/20 text-emerald-300 border-emerald-400/30' : 'bg-emerald-100 text-emerald-800 border-emerald-200'
+                  }`}>
+                    1st Table • Send
+                  </span>
+                  <div className={`p-1.5 rounded-xl ${userTabMode === 'send' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-emerald-100 text-emerald-700'}`}>
+                    <SendHorizontal className="w-4 h-4" />
                   </div>
-                  <span className="text-[10px] font-bold px-2.5 py-0.5 bg-indigo-50 text-indigo-700 border border-indigo-200/80 rounded-full font-mono">
-                    5 Core Metrics
+                </div>
+                <h3 className="text-xs font-black uppercase tracking-tight">Send Money Table</h3>
+                <p className={`text-[10px] mt-0.5 font-medium ${userTabMode === 'send' ? 'text-emerald-200/80' : 'text-slate-500'}`}>
+                  Send money requests & debit ledger
+                </p>
+                <div className="mt-2.5 pt-2 border-t border-slate-200/40 flex items-center justify-between text-xs">
+                  <span className="font-mono font-bold text-emerald-600">Today: ৳{todayUserSendAndDebitTotalSum.toFixed(2)}</span>
+                  <span className="text-[10px] font-bold text-emerald-600 flex items-center gap-0.5 group-hover:translate-x-1 transition-transform">
+                    View Table →
                   </span>
                 </div>
+              </div>
 
-                <div className="overflow-x-auto w-full max-w-full scrollbar-thin">
-                  <table className="w-full text-left text-xs border-separate border-spacing-y-1.5 min-w-[280px]">
-                    <thead>
-                      <tr className="text-slate-500 uppercase font-extrabold text-[9px] tracking-wider">
-                        <th className="py-1 px-2.5">Metric Name</th>
-                        <th className="py-1 px-2.5">Status / Details</th>
-                        <th className="py-1 px-2.5 text-right">Amount (TK)</th>
-                      </tr>
-                    </thead>
-                    <tbody className="font-medium text-xs">
-                      {/* Row 1: Total Pending Deposit */}
-                      <tr className="bg-amber-50/80 hover:bg-amber-100/70 border border-amber-200/80 rounded-lg transition shadow-xs">
-                        <td className="py-2 px-2.5 font-bold text-amber-900 rounded-l-lg flex items-center gap-1.5">
-                          <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse shrink-0"></span>
-                          <span>Total Pending Deposit</span>
-                        </td>
-                        <td className="py-2 px-2.5 text-[10px] text-amber-800 font-semibold">
-                          Pending: {pendingDepositsCount} request{pendingDepositsCount !== 1 ? 's' : ''}
-                        </td>
-                        <td className="py-2 px-2.5 text-right font-mono font-black text-amber-900 text-xs sm:text-sm rounded-r-lg">
-                          ৳ {pendingDepositsSum.toFixed(2)}
-                        </td>
-                      </tr>
-
-                      {/* Row 2: Total Transfer Request */}
-                      <tr className="bg-purple-50/80 hover:bg-purple-100/70 border border-purple-200/80 rounded-lg transition shadow-xs">
-                        <td className="py-2 px-2.5 font-bold text-purple-900 rounded-l-lg flex items-center gap-1.5">
-                          <span className="w-1.5 h-1.5 rounded-full bg-purple-500 animate-pulse shrink-0"></span>
-                          <span>Total Transfer Request</span>
-                        </td>
-                        <td className="py-2 px-2.5 text-[10px] text-purple-800 font-semibold">
-                          Pending: {pendingTransfersCount} transfer{pendingTransfersCount !== 1 ? 's' : ''}
-                        </td>
-                        <td className="py-2 px-2.5 text-right font-mono font-black text-purple-900 text-xs sm:text-sm rounded-r-lg">
-                          ৳ {pendingTransfersSum.toFixed(2)}
-                        </td>
-                      </tr>
-
-                      {/* Row 3: Approved Total Deposit */}
-                      <tr className="bg-sky-50/80 hover:bg-sky-100/70 border border-sky-200/80 rounded-lg transition shadow-xs">
-                        <td className="py-2 px-2.5 font-bold text-sky-900 rounded-l-lg flex items-center gap-1.5">
-                          <span className="w-1.5 h-1.5 rounded-full bg-sky-500 shrink-0"></span>
-                          <span>Approved Total Deposit</span>
-                        </td>
-                        <td className="py-2 px-2.5 text-[10px] text-sky-800 font-semibold">
-                          Approved: {approvedDepositsCount} deposit{approvedDepositsCount !== 1 ? 's' : ''}
-                        </td>
-                        <td className="py-2 px-2.5 text-right font-mono font-black text-sky-900 text-xs sm:text-sm rounded-r-lg">
-                          ৳ {approvedDepositsSum.toFixed(2)}
-                        </td>
-                      </tr>
-
-                      {/* Row 4: Approved Total Send Money */}
-                      <tr className="bg-emerald-50/80 hover:bg-emerald-100/70 border border-emerald-200/80 rounded-lg transition shadow-xs">
-                        <td className="py-2 px-2.5 font-bold text-emerald-900 rounded-l-lg flex items-center gap-1.5">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0"></span>
-                          <span>Approved Total Send Money</span>
-                        </td>
-                        <td className="py-2 px-2.5 text-[10px] text-emerald-800 font-semibold">
-                          Approved: {approvedSendMoneyCount} transfer{approvedSendMoneyCount !== 1 ? 's' : ''}
-                        </td>
-                        <td className="py-2 px-2.5 text-right font-mono font-black text-emerald-900 text-xs sm:text-sm rounded-r-lg">
-                          ৳ {approvedSendMoneySum.toFixed(2)}
-                        </td>
-                      </tr>
-
-                      {/* Row 5: Available Balance - Non-black indigo gradient */}
-                      <tr className="bg-gradient-to-r from-indigo-600 via-indigo-700 to-indigo-800 hover:from-indigo-500 hover:to-indigo-700 text-white rounded-lg transition shadow-md">
-                        <td className="py-2.5 px-2.5 font-black text-white rounded-l-lg flex items-center gap-1.5 text-xs uppercase tracking-wider">
-                          <span className="w-2 h-2 rounded-full bg-emerald-400 ring-2 ring-emerald-400/50 shrink-0 animate-pulse"></span>
-                          <span>Available Balance</span>
-                        </td>
-                        <td className="py-2.5 px-2.5 text-[10px] text-indigo-100 font-bold">
-                          {currentSessionUser.balance < 0 ? 'Credit Overdraft Active' : 'Core Wallet Active'}
-                        </td>
-                        <td className="py-2.5 px-2.5 text-right rounded-r-lg">
-                          <span className="inline-block bg-white text-indigo-950 font-mono font-black text-xs sm:text-sm px-3 py-0.5 rounded-lg border border-indigo-200 shadow-sm">
-                            ৳ {currentSessionUser.balance.toFixed(2)}
-                          </span>
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
+              {/* Card 2: Deposit Table */}
+              <div 
+                onClick={() => {
+                  setUserTabMode('deposit');
+                  setTimeout(() => {
+                    document.getElementById('deposit-workspace-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  }, 60);
+                }}
+                className={`p-3.5 sm:p-4 rounded-2xl border transition-all cursor-pointer shadow-sm relative overflow-hidden group active:scale-[0.98] ${
+                  userTabMode === 'deposit'
+                    ? 'bg-gradient-to-br from-sky-900 via-sky-950 to-slate-900 text-white border-sky-500/80 ring-2 ring-sky-400'
+                    : 'bg-white hover:bg-sky-50/60 text-slate-800 border-sky-200 hover:border-sky-400'
+                }`}
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <span className={`text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-full border ${
+                    userTabMode === 'deposit' ? 'bg-sky-500/20 text-sky-300 border-sky-400/30' : 'bg-sky-100 text-sky-800 border-sky-200'
+                  }`}>
+                    2nd Table • Deposit
+                  </span>
+                  <div className={`p-1.5 rounded-xl ${userTabMode === 'deposit' ? 'bg-sky-500/20 text-sky-400' : 'bg-sky-100 text-sky-700'}`}>
+                    <Banknote className="w-4 h-4" />
+                  </div>
+                </div>
+                <h3 className="text-xs font-black uppercase tracking-tight">Deposit Request Table</h3>
+                <p className={`text-[10px] mt-0.5 font-medium ${userTabMode === 'deposit' ? 'text-sky-200/80' : 'text-slate-500'}`}>
+                  Deposit requests & approval status
+                </p>
+                <div className="mt-2.5 pt-2 border-t border-slate-200/40 flex items-center justify-between text-xs">
+                  <span className="font-mono font-bold text-sky-600">Today: ৳{todayUserDepositTotalSum.toFixed(2)}</span>
+                  <span className="text-[10px] font-bold text-sky-600 flex items-center gap-0.5 group-hover:translate-x-1 transition-transform">
+                    View Table →
+                  </span>
                 </div>
               </div>
 
-              {/* Table 2: Daily Send & Commission Table - Modern Clean Non-Black Theme */}
-              <div className="lg:col-span-5 bg-white p-3.5 sm:p-4 rounded-xl border border-slate-200 shadow-sm space-y-3 w-full max-w-full overflow-hidden relative">
-                <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
-                  <div className="flex items-center space-x-2">
-                    <div className="p-1.5 bg-amber-100 text-amber-700 border border-amber-200/60 rounded-lg shadow-xs">
-                      <Coins className="w-3.5 h-3.5" />
-                    </div>
-                    <div>
-                      <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider">Daily Activity & Commission</h3>
-                      <p className="text-[10px] text-slate-500 font-medium">24h Ledger Summary</p>
-                    </div>
+              {/* Card 3: History / Filter Table */}
+              <div 
+                onClick={() => {
+                  setUserTabMode('search');
+                  setIsFilterDropdownOpen(true);
+                  setTimeout(() => {
+                    document.getElementById('search-ledger-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  }, 60);
+                }}
+                className={`p-3.5 sm:p-4 rounded-2xl border transition-all cursor-pointer shadow-sm relative overflow-hidden group active:scale-[0.98] ${
+                  userTabMode === 'search'
+                    ? 'bg-gradient-to-br from-indigo-900 via-indigo-950 to-slate-900 text-white border-indigo-500/80 ring-2 ring-indigo-400'
+                    : 'bg-white hover:bg-indigo-50/60 text-slate-800 border-indigo-200 hover:border-indigo-400'
+                }`}
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <span className={`text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-full border ${
+                    userTabMode === 'search' ? 'bg-indigo-500/20 text-indigo-300 border-indigo-400/30' : 'bg-indigo-100 text-indigo-800 border-indigo-200'
+                  }`}>
+                    3rd Table • History / Filter
+                  </span>
+                  <div className={`p-1.5 rounded-xl ${userTabMode === 'search' ? 'bg-indigo-500/20 text-indigo-400' : 'bg-indigo-100 text-indigo-700'}`}>
+                    <Search className="w-4 h-4" />
                   </div>
-                  <span className="text-[10px] font-bold px-2.5 py-0.5 bg-amber-50 text-amber-700 border border-amber-200/80 rounded-full font-mono">
-                    Today Ledger
+                </div>
+                <h3 className="text-xs font-black uppercase tracking-tight">Transaction Ledger</h3>
+                <p className={`text-[10px] mt-0.5 font-medium ${userTabMode === 'search' ? 'text-indigo-200/80' : 'text-slate-500'}`}>
+                  Full history, date filter & PDF
+                </p>
+                <div className="mt-2.5 pt-2 border-t border-slate-200/40 flex items-center justify-between text-xs">
+                  <span className="font-mono font-bold text-indigo-600">{userTxns.length} Records</span>
+                  <span className="text-[10px] font-bold text-indigo-600 flex items-center gap-0.5 group-hover:translate-x-1 transition-transform">
+                    View Table →
                   </span>
                 </div>
+              </div>
 
-                <div className="overflow-x-auto w-full max-w-full scrollbar-thin">
-                  <table className="w-full text-left text-xs border-separate border-spacing-y-1.5 min-w-[280px]">
-                    <thead>
-                      <tr className="text-slate-500 uppercase font-extrabold text-[9px]">
-                        <th className="px-2.5 py-1">Description</th>
-                        <th className="px-2.5 py-1 text-right">Balance</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {/* Row 1: Today total send & Debit - Vibrant Indigo Gradient */}
-                      <tr className="bg-gradient-to-r from-slate-800 to-indigo-900 text-white rounded-lg overflow-hidden shadow-sm border border-indigo-900/50">
-                        <td className="py-2.5 px-3 font-black rounded-l-lg">
-                          <div className="text-xs uppercase tracking-wide text-white font-black">Today total send & Debit</div>
-                          <div className="text-[10px] text-indigo-200 font-medium mt-0.5">
-                            Approved: ৳ {todayUserSendAndDebitApprovedSum.toFixed(2)}
-                          </div>
-                        </td>
-                        <td className="py-2.5 px-3 text-right rounded-r-lg">
-                          <span className="font-mono text-sm sm:text-base font-black text-white block">
-                            ৳ {todayUserSendAndDebitTotalSum.toFixed(2)}
-                          </span>
-                        </td>
-                      </tr>
-
-                      {/* Row 2: Today total deposit request - Vibrant Emerald Gradient */}
-                      <tr className="bg-gradient-to-r from-emerald-800 to-teal-900 text-white rounded-lg overflow-hidden shadow-sm border border-emerald-900/50">
-                        <td className="py-2.5 px-3 font-black rounded-l-lg">
-                          <div className="text-xs uppercase tracking-wide text-white font-black">Today total deposit request</div>
-                          <div className="text-[10px] text-emerald-200 font-medium mt-0.5">
-                            Approved: ৳ {todayUserDepositApprovedSum.toFixed(2)}
-                          </div>
-                        </td>
-                        <td className="py-2.5 px-3 text-right rounded-r-lg">
-                          <span className="font-mono text-sm sm:text-base font-black text-white block">
-                            ৳ {todayUserDepositTotalSum.toFixed(2)}
-                          </span>
-                        </td>
-                      </tr>
-
-                      {/* Row 3: Commission - Vibrant Amber/Bronze Gradient */}
-                      <tr className="bg-gradient-to-r from-amber-800 to-amber-900 text-white rounded-lg overflow-hidden shadow-sm border border-amber-900/50">
-                        <td className="py-2.5 px-3 font-black rounded-l-lg">
-                          <div className="text-xs uppercase tracking-wider text-white font-extrabold">Commission</div>
-                          <div className="text-[10px] text-amber-200 font-bold mt-0.5">
-                            Rate: ৳ {userCommissionMultiplier.toFixed(2)} / 1000 TK
-                          </div>
-                        </td>
-                        <td className="py-2.5 px-3 text-right rounded-r-lg">
-                          <span className="font-mono text-sm sm:text-base font-black text-amber-300 block">
-                            ৳ {userCommission.toFixed(2)}
-                          </span>
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
+              {/* Card 4: Financial Overview */}
+              <div 
+                onClick={() => {
+                  setUserTabMode('all');
+                  setTimeout(() => {
+                    document.getElementById('financial-summary-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  }, 60);
+                }}
+                className={`p-3.5 sm:p-4 rounded-2xl border transition-all cursor-pointer shadow-sm relative overflow-hidden group active:scale-[0.98] ${
+                  userTabMode === 'all'
+                    ? 'bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 text-white border-slate-700 ring-2 ring-slate-400'
+                    : 'bg-white hover:bg-slate-50 text-slate-800 border-slate-200 hover:border-slate-400'
+                }`}
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <span className={`text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-full border ${
+                    userTabMode === 'all' ? 'bg-slate-800 text-slate-200 border-slate-700' : 'bg-slate-100 text-slate-800 border-slate-200'
+                  }`}>
+                    4th Table • All Overview
+                  </span>
+                  <div className={`p-1.5 rounded-xl ${userTabMode === 'all' ? 'bg-slate-800 text-slate-200' : 'bg-slate-100 text-slate-700'}`}>
+                    <LayoutDashboard className="w-4 h-4" />
+                  </div>
+                </div>
+                <h3 className="text-xs font-black uppercase tracking-tight">Financial Summary</h3>
+                <p className={`text-[10px] mt-0.5 font-medium ${userTabMode === 'all' ? 'text-slate-300' : 'text-slate-500'}`}>
+                  5 Core wallet metrics & daily ledger
+                </p>
+                <div className="mt-2.5 pt-2 border-t border-slate-200/40 flex items-center justify-between text-xs">
+                  <span className="font-mono font-bold text-emerald-500">৳{currentSessionUser.balance.toFixed(2)}</span>
+                  <span className="text-[10px] font-bold text-slate-600 flex items-center gap-0.5 group-hover:translate-x-1 transition-transform">
+                    View All →
+                  </span>
                 </div>
               </div>
             </div>
 
-            {/* ATTACHED WORKSPACE AREA DIRECTLY UNDER WELCOME TABLE */}
-            {/* Send Money Section when in 'all' mode */}
+            {/* Financial Summary Tables Section (Shown when userTabMode === 'all') */}
             {userTabMode === 'all' && (
+              <div id="financial-summary-section" className="grid grid-cols-1 lg:grid-cols-12 gap-5 pt-2">
+                {/* Table 1: Primary Account Balances (5 Core Metrics) */}
+                <div className="lg:col-span-7 bg-white p-3.5 sm:p-4 rounded-xl border border-slate-200 shadow-sm space-y-3 w-full max-w-full overflow-hidden relative">
+                  {/* Header Bar */}
+                  <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
+                    <div className="flex items-center space-x-2">
+                      <div className="p-1.5 bg-indigo-100 text-indigo-700 border border-indigo-200/60 rounded-lg shadow-xs">
+                        <Wallet className="w-3.5 h-3.5" />
+                      </div>
+                      <div>
+                        <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider">Account Financial Summary</h3>
+                        <p className="text-[10px] text-slate-500 font-medium">Real-Time Wallet Metrics</p>
+                      </div>
+                    </div>
+                    <span className="text-[10px] font-bold px-2.5 py-0.5 bg-indigo-50 text-indigo-700 border border-indigo-200/80 rounded-full font-mono">
+                      5 Core Metrics
+                    </span>
+                  </div>
+
+                  <div className="overflow-x-auto w-full max-w-full scrollbar-thin">
+                    <table className="w-full text-left text-xs border-separate border-spacing-y-1.5 min-w-[280px]">
+                      <thead>
+                        <tr className="text-slate-500 uppercase font-extrabold text-[9px] tracking-wider">
+                          <th className="py-1 px-2.5">Metric Name</th>
+                          <th className="py-1 px-2.5">Status / Details</th>
+                          <th className="py-1 px-2.5 text-right">Amount (TK)</th>
+                        </tr>
+                      </thead>
+                      <tbody className="font-medium text-xs">
+                        {/* Row 1: Total Pending Deposit */}
+                        <tr className="bg-amber-50/80 hover:bg-amber-100/70 border border-amber-200/80 rounded-lg transition shadow-xs">
+                          <td className="py-2 px-2.5 font-bold text-amber-900 rounded-l-lg flex items-center gap-1.5">
+                            <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse shrink-0"></span>
+                            <span>Total Pending Deposit</span>
+                          </td>
+                          <td className="py-2 px-2.5 text-[10px] text-amber-800 font-semibold">
+                            Pending: {pendingDepositsCount} request{pendingDepositsCount !== 1 ? 's' : ''}
+                          </td>
+                          <td className="py-2 px-2.5 text-right font-mono font-black text-amber-900 text-xs sm:text-sm rounded-r-lg">
+                            ৳ {pendingDepositsSum.toFixed(2)}
+                          </td>
+                        </tr>
+
+                        {/* Row 2: Total Transfer Request */}
+                        <tr className="bg-purple-50/80 hover:bg-purple-100/70 border border-purple-200/80 rounded-lg transition shadow-xs">
+                          <td className="py-2 px-2.5 font-bold text-purple-900 rounded-l-lg flex items-center gap-1.5">
+                            <span className="w-1.5 h-1.5 rounded-full bg-purple-500 animate-pulse shrink-0"></span>
+                            <span>Total Transfer Request</span>
+                          </td>
+                          <td className="py-2 px-2.5 text-[10px] text-purple-800 font-semibold">
+                            Pending: {pendingTransfersCount} transfer{pendingTransfersCount !== 1 ? 's' : ''}
+                          </td>
+                          <td className="py-2 px-2.5 text-right font-mono font-black text-purple-900 text-xs sm:text-sm rounded-r-lg">
+                            ৳ {pendingTransfersSum.toFixed(2)}
+                          </td>
+                        </tr>
+
+                        {/* Row 3: Approved Total Deposit */}
+                        <tr className="bg-sky-50/80 hover:bg-sky-100/70 border border-sky-200/80 rounded-lg transition shadow-xs">
+                          <td className="py-2 px-2.5 font-bold text-sky-900 rounded-l-lg flex items-center gap-1.5">
+                            <span className="w-1.5 h-1.5 rounded-full bg-sky-500 shrink-0"></span>
+                            <span>Approved Total Deposit</span>
+                          </td>
+                          <td className="py-2 px-2.5 text-[10px] text-sky-800 font-semibold">
+                            Approved: {approvedDepositsCount} deposit{approvedDepositsCount !== 1 ? 's' : ''}
+                          </td>
+                          <td className="py-2 px-2.5 text-right font-mono font-black text-sky-900 text-xs sm:text-sm rounded-r-lg">
+                            ৳ {approvedDepositsSum.toFixed(2)}
+                          </td>
+                        </tr>
+
+                        {/* Row 4: Approved Total Send Money */}
+                        <tr className="bg-emerald-50/80 hover:bg-emerald-100/70 border border-emerald-200/80 rounded-lg transition shadow-xs">
+                          <td className="py-2 px-2.5 font-bold text-emerald-900 rounded-l-lg flex items-center gap-1.5">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0"></span>
+                            <span>Approved Total Send Money</span>
+                          </td>
+                          <td className="py-2 px-2.5 text-[10px] text-emerald-800 font-semibold">
+                            Approved: {approvedSendMoneyCount} transfer{approvedSendMoneyCount !== 1 ? 's' : ''}
+                          </td>
+                          <td className="py-2 px-2.5 text-right font-mono font-black text-emerald-900 text-xs sm:text-sm rounded-r-lg">
+                            ৳ {approvedSendMoneySum.toFixed(2)}
+                          </td>
+                        </tr>
+
+                        {/* Row 5: Available Balance */}
+                        <tr className="bg-gradient-to-r from-indigo-600 via-indigo-700 to-indigo-800 hover:from-indigo-500 hover:to-indigo-700 text-white rounded-lg transition shadow-md">
+                          <td className="py-2.5 px-2.5 font-black text-white rounded-l-lg flex items-center gap-1.5 text-xs uppercase tracking-wider">
+                            <span className="w-2 h-2 rounded-full bg-emerald-400 ring-2 ring-emerald-400/50 shrink-0 animate-pulse"></span>
+                            <span>Available Balance</span>
+                          </td>
+                          <td className="py-2.5 px-2.5 text-[10px] text-indigo-100 font-bold">
+                            {currentSessionUser.balance < 0 ? 'Credit Overdraft Active' : 'Core Wallet Active'}
+                          </td>
+                          <td className="py-2.5 px-2.5 text-right rounded-r-lg">
+                            <span className="inline-block bg-white text-indigo-950 font-mono font-black text-xs sm:text-sm px-3 py-0.5 rounded-lg border border-indigo-200 shadow-sm">
+                              ৳ {currentSessionUser.balance.toFixed(2)}
+                            </span>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                {/* Table 2: Daily Send & Commission Table */}
+                <div className="lg:col-span-5 bg-white p-3.5 sm:p-4 rounded-xl border border-slate-200 shadow-sm space-y-3 w-full max-w-full overflow-hidden relative">
+                  <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
+                    <div className="flex items-center space-x-2">
+                      <div className="p-1.5 bg-amber-100 text-amber-700 border border-amber-200/60 rounded-lg shadow-xs">
+                        <Coins className="w-3.5 h-3.5" />
+                      </div>
+                      <div>
+                        <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider">Daily Activity & Commission</h3>
+                        <p className="text-[10px] text-slate-500 font-medium">24h Ledger Summary</p>
+                      </div>
+                    </div>
+                    <span className="text-[10px] font-bold px-2.5 py-0.5 bg-amber-50 text-amber-700 border border-amber-200/80 rounded-full font-mono">
+                      Today Ledger
+                    </span>
+                  </div>
+
+                  <div className="overflow-x-auto w-full max-w-full scrollbar-thin">
+                    <table className="w-full text-left text-xs border-separate border-spacing-y-1.5 min-w-[280px]">
+                      <thead>
+                        <tr className="text-slate-500 uppercase font-extrabold text-[9px]">
+                          <th className="px-2.5 py-1">Description</th>
+                          <th className="px-2.5 py-1 text-right">Balance</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {/* Row 1: Today total send & Debit */}
+                        <tr className="bg-gradient-to-r from-slate-800 to-indigo-900 text-white rounded-lg overflow-hidden shadow-sm border border-indigo-900/50">
+                          <td className="py-2.5 px-3 font-black rounded-l-lg">
+                            <div className="text-xs uppercase tracking-wide text-white font-black">Today total send & Debit</div>
+                            <div className="text-[10px] text-indigo-200 font-medium mt-0.5">
+                              Approved: ৳ {todayUserSendAndDebitApprovedSum.toFixed(2)}
+                            </div>
+                          </td>
+                          <td className="py-2.5 px-3 text-right rounded-r-lg">
+                            <span className="font-mono text-sm sm:text-base font-black text-white block">
+                              ৳ {todayUserSendAndDebitTotalSum.toFixed(2)}
+                            </span>
+                          </td>
+                        </tr>
+
+                        {/* Row 2: Today total deposit request */}
+                        <tr className="bg-gradient-to-r from-emerald-800 to-teal-900 text-white rounded-lg overflow-hidden shadow-sm border border-emerald-900/50">
+                          <td className="py-2.5 px-3 font-black rounded-l-lg">
+                            <div className="text-xs uppercase tracking-wide text-white font-black">Today total deposit request</div>
+                            <div className="text-[10px] text-emerald-200 font-medium mt-0.5">
+                              Approved: ৳ {todayUserDepositApprovedSum.toFixed(2)}
+                            </div>
+                          </td>
+                          <td className="py-2.5 px-3 text-right rounded-r-lg">
+                            <span className="font-mono text-sm sm:text-base font-black text-white block">
+                              ৳ {todayUserDepositTotalSum.toFixed(2)}
+                            </span>
+                          </td>
+                        </tr>
+
+                        {/* Row 3: Commission */}
+                        <tr className="bg-gradient-to-r from-amber-800 to-amber-900 text-white rounded-lg overflow-hidden shadow-sm border border-amber-900/50">
+                          <td className="py-2.5 px-3 font-black rounded-l-lg">
+                            <div className="text-xs uppercase tracking-wider text-white font-extrabold">Commission</div>
+                            <div className="text-[10px] text-amber-200 font-bold mt-0.5">
+                              Rate: ৳ {userCommissionMultiplier.toFixed(2)} / 1000 TK
+                            </div>
+                          </td>
+                          <td className="py-2.5 px-3 text-right rounded-r-lg">
+                            <span className="font-mono text-sm sm:text-base font-black text-amber-300 block">
+                              ৳ {userCommission.toFixed(2)}
+                            </span>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            )}
+            {/* Send Money Section when in 'all' or 'send' mode */}
+            {(userTabMode === 'all' || userTabMode === 'send') && (
               <div className="space-y-6">
                 {/* Send Money Form - Unique Design */}
                 <div id="send-money-card" className="bg-gradient-to-br from-slate-900 via-slate-800 to-emerald-950 text-white rounded-2xl p-4 sm:p-6 border border-emerald-500/30 shadow-xl space-y-4 text-left relative overflow-hidden">
@@ -5917,7 +5975,7 @@ export default function LiveSimulation() {
               <div className="lg:col-span-12 space-y-6">
                 
                 {/* Dynamic Content Based on userTabMode */}
-                {userTabMode === 'deposit' && (
+                {(userTabMode === 'all' || userTabMode === 'deposit') && (
                   <div id="deposit-workspace-section" className="space-y-6">
                     {/* Deposit Request Form */}
                     <div className="bg-white rounded-2xl p-5 border border-sky-200 shadow-sm space-y-4 text-left">
@@ -6089,7 +6147,7 @@ export default function LiveSimulation() {
                 )}
 
                 {/* Single Consolidated Transaction Ledger */}
-                {(() => {
+                {(userTabMode === 'all' || userTabMode === 'search') && (() => {
                   const filteredUserTransactions = userTxns.filter(t => {
                     // 1. Instant Search query
                     if (ledgerSearchQuery.trim()) {
