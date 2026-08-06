@@ -347,7 +347,8 @@ const INITIAL_INQUIRIES: SimulatedInquiry[] = [
   userTransactions: SimulatedTransaction[], 
   _rate: number, 
   _commissionChargesForUser: Array<{id: string, amount: number, timestamp: string}> = [],
-  filterNote?: string
+  filterNote?: string,
+  allUserTxns?: SimulatedTransaction[]
 ) => {
   try {
     // 1. Paper size A4 in portrait mode
@@ -361,21 +362,21 @@ const INITIAL_INQUIRIES: SimulatedInquiry[] = [
     const pageWidth = 210;
     const pageHeight = 297;
 
-    // 2. Margins: 0.5 inch = 12.7 mm on all 4 sides (top, right, bottom, left)
+    // Margins: 0.5 inch = 12.7 mm on all 4 sides (top, right, bottom, left)
     const margin = 12.7; // 0.5 inch left
     const rightMargin = 197.3; // 210 - 12.7 mm (0.5 inch right)
     const topMargin = 12.7; // 0.5 inch top
     const bottomMargin = 284.3; // 297 - 12.7 mm (0.5 inch bottom)
     const printableWidth = rightMargin - margin; // 184.6 mm
     
-    let y = topMargin + 3;
+    let y = topMargin;
 
-    // Helper to add semi-transparent diagonal watermark on every page
+    // Watermark
     const addWatermark = () => {
       try {
         doc.setFont("helvetica", "bold");
-        doc.setFontSize(45);
-        doc.setTextColor(225, 228, 233);
+        doc.setFontSize(42);
+        doc.setTextColor(226, 232, 240); // slate-200
         doc.text("e-Statement", pageWidth / 2, pageHeight / 2, {
           align: "center",
           angle: 35
@@ -390,53 +391,113 @@ const INITIAL_INQUIRIES: SimulatedInquiry[] = [
 
     addWatermark();
 
-    // --- TOP USER HEADER ---
+    // --- SIMPLE CLEAN HEADER ---
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(13);
-    doc.setTextColor(15, 23, 42);
-    doc.text(user.fullName.toUpperCase(), margin, y + 4);
+    doc.setFontSize(14);
+    doc.setTextColor(15, 23, 42); // slate-900
+    doc.text("MASHUD TELECOM", margin, y + 5);
 
     doc.setFont("helvetica", "normal");
-    doc.setFontSize(8.5);
-    doc.setTextColor(71, 85, 105);
-    doc.text(`Mobile: ${user.mobile}`, margin, y + 9);
-    doc.text(filterNote ? `Account Statement (Filtered)` : `Account Statement`, margin, y + 14);
+    doc.setFontSize(9);
+    doc.setTextColor(71, 85, 105); // slate-600
+    doc.text("ACCOUNT STATEMENT", margin, y + 10);
 
-    // Right Side: Minimalist Account Metadata (aligned to right margin 197.3 mm)
-    const metaY = y + 4;
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+    doc.setTextColor(71, 85, 105);
+    const issueDateTime = `${new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).replace(/ /g, '-')} ${new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}`;
+    doc.text(`Date: ${issueDateTime}`, rightMargin, y + 5, { align: "right" });
     doc.setFont("courier", "normal");
+    doc.text(`Ref: STMT-${(user.id || 'ACC').replace(/[^a-zA-Z0-9]/g, '').slice(0, 8).toUpperCase()}`, rightMargin, y + 10, { align: "right" });
+
+    y += 13;
+    doc.setDrawColor(203, 213, 225); // slate-300
+    doc.setLineWidth(0.4);
+    doc.line(margin, y, rightMargin, y);
+    y += 4;
+
+    // --- CUSTOMER & ACCOUNT PARTICULARS BOX ---
+    const detailsBoxY = y;
+    const detailsBoxHeight = 24;
+    doc.setFillColor(248, 250, 252); // slate-50
+    doc.rect(margin, detailsBoxY, printableWidth, detailsBoxHeight, "F");
+    
+    doc.setDrawColor(226, 232, 240); // slate-200
+    doc.setLineWidth(0.3);
+    doc.rect(margin, detailsBoxY, printableWidth, detailsBoxHeight, "S");
+
+    // Vertical Divider inside Customer Box
+    const midX = margin + (printableWidth / 2);
+    doc.setDrawColor(226, 232, 240);
+    doc.line(midX, detailsBoxY, midX, detailsBoxY + detailsBoxHeight);
+
+    // Left Column Info
+    doc.setFont("helvetica", "bold");
     doc.setFontSize(8);
     doc.setTextColor(15, 23, 42);
-    doc.text(`Currency    : BDT`, rightMargin, metaY, { align: "right" });
-    doc.text(`Issue Date  : ${new Date().toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })}`, rightMargin, metaY + 4.5, { align: "right" });
-    
-    // Highlighted Current Balance Line under Issue Date with Yellow Background
+    doc.text("Account Holder :", margin + 3, detailsBoxY + 5);
+    doc.setFont("helvetica", "normal");
+    doc.text((user.fullName || 'Customer').toUpperCase(), margin + 30, detailsBoxY + 5);
+
+    doc.setFont("helvetica", "bold");
+    doc.text("Mobile / A/C No :", margin + 3, detailsBoxY + 10);
+    doc.setFont("courier", "normal");
+    doc.text(user.mobile || 'N/A', margin + 30, detailsBoxY + 10);
+
+    doc.setFont("helvetica", "bold");
+    doc.text("Email Address  :", margin + 3, detailsBoxY + 15);
+    doc.setFont("helvetica", "normal");
+    doc.text(user.email || 'N/A', margin + 30, detailsBoxY + 15);
+
+    // Extract statement period from filterNote or transaction range
+    let statementPeriodText = "ALL TIME HISTORY";
+    if (filterNote) {
+      const fromMatch = filterNote.match(/From:\s*([^\s|]+)/i);
+      const toMatch = filterNote.match(/To:\s*([^\s|]+)/i);
+      if (fromMatch || toMatch) {
+        const fromPart = fromMatch ? fromMatch[1] : 'Start';
+        const toPart = toMatch ? toMatch[1] : 'End';
+        statementPeriodText = `${fromPart} TO ${toPart}`;
+      }
+    }
+
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(15, 23, 42);
+    doc.text("Statement Period:", margin + 3, detailsBoxY + 20);
+    doc.setFont("courier", "normal");
+    doc.setTextColor(15, 23, 42);
+    doc.text(statementPeriodText.toUpperCase(), margin + 30, detailsBoxY + 20);
+
+    // Right Column Info
+    doc.setTextColor(15, 23, 42);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8);
+    doc.text("Currency      :", midX + 3, detailsBoxY + 5);
+    doc.setFont("courier", "normal");
+    doc.text("BDT (Bangladeshi Taka)", midX + 28, detailsBoxY + 5);
+
+    doc.setFont("helvetica", "bold");
+    doc.text("Account Type  :", midX + 3, detailsBoxY + 10);
+    doc.setFont("helvetica", "normal");
+    doc.text("Digital Wallet & Ledger", midX + 28, detailsBoxY + 10);
+
+    doc.setFont("helvetica", "bold");
+    doc.text("Account Status:", midX + 3, detailsBoxY + 15);
+    doc.setFont("helvetica", "normal");
+    doc.text("Active", midX + 28, detailsBoxY + 15);
+
     const userAvailBalance = user.balance || 0;
     const fullBalStr = userAvailBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    const currentBalText = `Current Bal : ৳ ${fullBalStr}`;
-    
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8);
+    doc.text("Available Bal :", midX + 3, detailsBoxY + 20);
     doc.setFont("courier", "bold");
-    doc.setFontSize(8.5);
-    const balBoxWidth = doc.getTextWidth(currentBalText) + 5;
-    const balBoxX = rightMargin - balBoxWidth;
-    const balBoxY = metaY + 7;
-    
-    // Fill bright yellow box background
-    doc.setFillColor(255, 235, 59); // Yellow (#ffeb3b)
-    doc.rect(balBoxX, balBoxY, balBoxWidth, 5.5, "F");
-    
-    // Golden border around current balance box
-    doc.setDrawColor(202, 138, 4);
-    doc.setLineWidth(0.3);
-    doc.rect(balBoxX, balBoxY, balBoxWidth, 5.5, "S");
+    doc.setFontSize(14);
+    doc.text(`Tk ${fullBalStr}`, midX + 28, detailsBoxY + 20);
 
-    // Bold text inside yellow box
-    doc.setTextColor(15, 23, 42);
-    doc.text(currentBalText, rightMargin - 2, balBoxY + 4, { align: "right" });
+    y += detailsBoxHeight + 4;
 
-    y += 20;
-
-    // Merge any commission charges in _commissionChargesForUser that aren't already represented in userTransactions
+    // Merge any commission charges
     const effectiveTxns = [...userTransactions];
     if (Array.isArray(_commissionChargesForUser) && _commissionChargesForUser.length > 0) {
       _commissionChargesForUser.forEach(charge => {
@@ -467,136 +528,157 @@ const INITIAL_INQUIRIES: SimulatedInquiry[] = [
     // Sort user transactions chronologically (oldest to newest)
     const sortedTxns = effectiveTxns.sort((a, b) => new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime());
 
-    // Compute dynamic opening balance before statement transactions
-    const approvedTxns = sortedTxns.filter(t => t.status === 'approved');
-    const totalApprovedDeposits = approvedTxns
-      .filter(t => t.type === 'deposit')
-      .reduce((sum, t) => sum + (t.amount || 0), 0);
-    const totalApprovedWithdrawals = approvedTxns
-      .filter(t => t.type !== 'deposit')
-      .reduce((sum, t) => sum + (t.amount || 0), 0);
+    // Calculate opening balance
+    const fullHistoryInput = (allUserTxns && allUserTxns.length > 0) ? allUserTxns : userTransactions;
+    const fullEffectiveTxns = [...fullHistoryInput];
+    if (Array.isArray(_commissionChargesForUser) && _commissionChargesForUser.length > 0) {
+      _commissionChargesForUser.forEach(charge => {
+        const exists = fullEffectiveTxns.some(t => 
+          (t.recipient === 'System Commission Charge' || t.way === 'Commission Charge' || (t.referenceNo && t.referenceNo.startsWith('COM-'))) &&
+          Math.abs(t.amount - charge.amount) < 0.01 &&
+          (t.createdAt === charge.timestamp || (t.id && t.id.includes(charge.id)))
+        );
+        if (!exists) {
+          fullEffectiveTxns.push({
+            id: charge.id,
+            userId: user.id,
+            userEmail: user.email,
+            userMobile: user.mobile,
+            type: 'send_money',
+            amount: charge.amount,
+            status: 'approved',
+            referenceNo: `COM-${charge.id.replace(/[^a-zA-Z0-9]/g, '').substring(0, 8).toUpperCase()}`,
+            way: 'Commission Charge',
+            recipient: 'System Commission Charge',
+            createdAt: charge.timestamp,
+            authPin: '258096'
+          });
+        }
+      });
+    }
 
-    let openingBalance = (user.balance || 0) - totalApprovedDeposits + totalApprovedWithdrawals;
-    if (openingBalance < 0) openingBalance = 0;
+    const fullSortedTxns = fullEffectiveTxns.sort((a, b) => new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime());
+
+    // Compute initial seed balance from overall full history
+    let allApprovedDepositsInHistory = 0;
+    let allApprovedWithdrawalsInHistory = 0;
+    fullSortedTxns.forEach(t => {
+      if (t.status === 'approved') {
+        if (t.type === 'deposit') {
+          allApprovedDepositsInHistory += (t.amount || 0);
+        } else {
+          allApprovedWithdrawalsInHistory += (t.amount || 0);
+        }
+      }
+    });
+
+    const initialSeedBalance = Math.max(0, (user.balance || 0) - allApprovedDepositsInHistory + allApprovedWithdrawalsInHistory);
+
+    let openingBalance = initialSeedBalance;
+    if (sortedTxns.length > 0 && fullSortedTxns.length > 0) {
+      const firstFilteredTxn = sortedTxns[0];
+      const firstTxnTime = new Date(firstFilteredTxn.createdAt || 0).getTime();
+
+      let priorApprovedDeposits = 0;
+      let priorApprovedWithdrawals = 0;
+
+      fullSortedTxns.forEach(t => {
+        const tTime = new Date(t.createdAt || 0).getTime();
+        if (t.status === 'approved') {
+          if (tTime < firstTxnTime || (tTime === firstTxnTime && t.id !== firstFilteredTxn.id && fullSortedTxns.indexOf(t) < fullSortedTxns.indexOf(firstFilteredTxn))) {
+            if (t.type === 'deposit') {
+              priorApprovedDeposits += (t.amount || 0);
+            } else {
+              priorApprovedWithdrawals += (t.amount || 0);
+            }
+          }
+        }
+      });
+
+      const calcPrev = initialSeedBalance + priorApprovedDeposits - priorApprovedWithdrawals;
+      openingBalance = calcPrev > 0 ? calcPrev : 0;
+    } else {
+      const approvedTxns = sortedTxns.filter(t => t.status === 'approved');
+      const totalApprovedDeposits = approvedTxns.filter(t => t.type === 'deposit').reduce((sum, t) => sum + (t.amount || 0), 0);
+      const totalApprovedWithdrawals = approvedTxns.filter(t => t.type !== 'deposit').reduce((sum, t) => sum + (t.amount || 0), 0);
+      openingBalance = Math.max(0, (user.balance || 0) - totalApprovedDeposits + totalApprovedWithdrawals);
+    }
+
+    const approvedTxns = sortedTxns.filter(t => t.status === 'approved');
+    const totalApprovedDeposits = approvedTxns.filter(t => t.type === 'deposit').reduce((sum, t) => sum + (t.amount || 0), 0);
+    const totalApprovedWithdrawals = approvedTxns.filter(t => t.type !== 'deposit').reduce((sum, t) => sum + (t.amount || 0), 0);
 
     let runningBalance = openingBalance;
     let totalDeposits = 0;
     let totalWithdrawals = 0;
-    const finalCalculatedBalance = user.balance || 0;
 
-    // Statement Period Subtitle / Filter Summary
-    doc.setFont("courier", "bold");
-    const todayFormatted = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).replace(/ /g, '-');
-    if (filterNote) {
-      doc.setFontSize(7.5);
-      doc.setTextColor(190, 18, 60); // rose-700
-      doc.text(`FILTER APPLIED: ${filterNote.toUpperCase()}`, margin, y);
-    } else {
-      doc.setFontSize(8.5);
-      doc.setTextColor(15, 23, 42);
-      doc.text(`STATEMENT OF ACCOUNT FOR THE PERIOD  24-Jun-2026 TO ${todayFormatted}`, margin, y);
-    }
+    // --- TABLE HEADERS ---
+    const tableHeaderHeight = 6;
+    doc.setFillColor(241, 245, 249); // slate-100
+    doc.rect(margin, y, printableWidth, tableHeaderHeight, "F");
 
-    y += 4;
-    // --- DEDICATED YELLOW HIGHLIGHTED ACCOUNT RUNNING BALANCE SUMMARY TABLE BLOCK ---
-    const summaryBoxY = y;
-    const summaryBoxHeight = 13;
-    doc.setFillColor(254, 240, 138); // Bright Yellow Highlight (#fef08a)
-    doc.rect(margin, summaryBoxY, printableWidth, summaryBoxHeight, "F");
+    doc.setDrawColor(203, 213, 225); // slate-300
+    doc.setLineWidth(0.3);
+    doc.rect(margin, y, printableWidth, tableHeaderHeight, "S");
 
-    // Golden / Amber Outline
-    doc.setDrawColor(202, 138, 4);
-    doc.setLineWidth(0.4);
-    doc.rect(margin, summaryBoxY, printableWidth, summaryBoxHeight, "S");
-
-    // Header inside Yellow Summary Box
     doc.setFont("courier", "bold");
     doc.setFontSize(7.5);
-    doc.setTextColor(15, 23, 42);
-    doc.text("ACCOUNT RUNNING BALANCE & LEDGER AUDIT SUMMARY", margin + 3, summaryBoxY + 4);
+    doc.setTextColor(15, 23, 42); // slate-900
+    doc.text("DATE", margin + 2, y + 4);
+    doc.text("PARTICULARS / DESCRIPTION", margin + 26, y + 4);
+    doc.text("REF / PIN", margin + 88, y + 4);
+    doc.text("WITHDRAW", margin + 130, y + 4, { align: "right" });
+    doc.text("DEPOSIT", margin + 158, y + 4, { align: "right" });
+    doc.text("BALANCE", rightMargin - 2, y + 4, { align: "right" });
 
-    // Dotted Divider inside yellow box
-    doc.setDrawColor(202, 138, 4);
-    doc.setLineWidth(0.2);
-    doc.setLineDashPattern([1, 1], 0);
-    doc.line(margin + 2, summaryBoxY + 5.5, rightMargin - 2, summaryBoxY + 5.5);
-    doc.setLineDashPattern([], 0);
+    y += tableHeaderHeight + 2;
 
-    // Summary Metrics inside yellow box
-    doc.setFontSize(7);
-    const opBalStr = `OPENING BAL: Tk ${openingBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-    const depStr = `DEPOSITS(+): Tk ${totalApprovedDeposits.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-    const wthStr = `WITHDRAW(-): Tk ${totalApprovedWithdrawals.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-    const curBalStr = `RUNNING BAL: Tk ${finalCalculatedBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    // Balance Forward Initial Row
+    const firstTxnDateStr = sortedTxns[0]?.createdAt 
+      ? new Date(sortedTxns[0].createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).replace(/ /g, '-')
+      : "24-Jun-2026";
 
-    doc.text(opBalStr, margin + 3, summaryBoxY + 9.5);
-    doc.text(depStr, margin + 48, summaryBoxY + 9.5);
-    doc.text(wthStr, margin + 98, summaryBoxY + 9.5);
-
-    // Yellow Pill Highlight for Current Running Balance
-    const curBalWidth = doc.getTextWidth(curBalStr) + 4;
-    doc.setFillColor(255, 235, 59); // Bright Yellow
-    doc.rect(rightMargin - curBalWidth - 2, summaryBoxY + 6.5, curBalWidth, 5, "F");
-    doc.setDrawColor(202, 138, 4);
-    doc.rect(rightMargin - curBalWidth - 2, summaryBoxY + 6.5, curBalWidth, 5, "S");
-    doc.setTextColor(15, 23, 42);
-    doc.text(curBalStr, rightMargin - 4, summaryBoxY + 10, { align: "right" });
-
-    y += summaryBoxHeight + 4;
-
-    // Top Dotted Divider Line for Table
-    doc.setDrawColor(71, 85, 105);
-    doc.setLineDashPattern([1, 1], 0);
-    doc.line(margin, y, rightMargin, y);
-
-    y += 4;
-    // Table Headers with Yellow Highlight on BALANCE header column
-    doc.setFillColor(254, 240, 138); // Yellow highlight for BALANCE header
-    doc.rect(rightMargin - 32, y - 3, 32, 4.5, "F");
-
-    doc.setFont("courier", "bold");
-    doc.setFontSize(8);
-    doc.setTextColor(15, 23, 42);
-    doc.text("DATE", margin, y);
-    doc.text("PARTICULARS", margin + 26, y);
-    doc.text("CHQ.NO", margin + 86, y);
-    doc.text("WITHDRAW", margin + 130, y, { align: "right" });
-    doc.text("DEPOSIT", margin + 158, y, { align: "right" });
-    doc.text("BALANCE", rightMargin, y, { align: "right" });
-
-    y += 3;
-    // Bottom Dotted Divider Line for headers
-    doc.line(margin, y, rightMargin, y);
-
-    // Initial Balance Forward Row
-    y += 5;
     doc.setFont("courier", "normal");
     doc.setFontSize(7.5);
-    doc.text("24-Jun-2026", margin, y);
-    doc.text("Balance Forward", margin + 26, y);
+    doc.setTextColor(15, 23, 42);
+    doc.text(firstTxnDateStr, margin + 2, y);
+    doc.text("Balance Forward (Opening Balance)", margin + 26, y);
+    doc.text("N/A", margin + 88, y);
     doc.text("0.00", margin + 130, y, { align: "right" });
     doc.text("0.00", margin + 158, y, { align: "right" });
-    doc.text(openingBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }), rightMargin, y, { align: "right" });
+    doc.setFont("courier", "bold");
+    doc.text(openingBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }), rightMargin - 2, y, { align: "right" });
 
-    y += 5;
+    y += 4;
+    doc.setDrawColor(226, 232, 240);
+    doc.setLineWidth(0.2);
+    doc.line(margin, y, rightMargin, y);
+    y += 3;
 
+    // Iterate through transactions
     sortedTxns.forEach((t, index) => {
       if (y > bottomMargin - 25) {
         doc.addPage();
         addWatermark();
         
         y = topMargin + 8;
+        doc.setFillColor(241, 245, 249);
+        doc.rect(margin, y, printableWidth, tableHeaderHeight, "F");
+        doc.setDrawColor(203, 213, 225);
+        doc.setLineWidth(0.3);
+        doc.rect(margin, y, printableWidth, tableHeaderHeight, "S");
+
         doc.setFont("courier", "bold");
-        doc.setFontSize(8);
-        doc.text("DATE", margin, y);
-        doc.text("PARTICULARS", margin + 26, y);
-        doc.text("CHQ.NO", margin + 86, y);
-        doc.text("WITHDRAW", margin + 130, y, { align: "right" });
-        doc.text("DEPOSIT", margin + 158, y, { align: "right" });
-        doc.text("BALANCE", rightMargin, y, { align: "right" });
-        y += 3;
-        doc.line(margin, y, rightMargin, y);
-        y += 5;
+        doc.setFontSize(7.5);
+        doc.setTextColor(15, 23, 42);
+        doc.text("DATE", margin + 2, y + 4);
+        doc.text("PARTICULARS / DESCRIPTION", margin + 26, y + 4);
+        doc.text("REF / PIN", margin + 88, y + 4);
+        doc.text("WITHDRAW", margin + 130, y + 4, { align: "right" });
+        doc.text("DEPOSIT", margin + 158, y + 4, { align: "right" });
+        doc.text("BALANCE", rightMargin - 2, y + 4, { align: "right" });
+
+        y += tableHeaderHeight + 3;
       }
 
       const isApproved = t.status === 'approved';
@@ -624,7 +706,6 @@ const INITIAL_INQUIRIES: SimulatedInquiry[] = [
         }
       }
 
-      // Date string format e.g. 25-Jun-2026
       let dateStr = "25-Jun-2026";
       try {
         if (t.createdAt) {
@@ -635,7 +716,6 @@ const INITIAL_INQUIRIES: SimulatedInquiry[] = [
         }
       } catch (e) {}
 
-      // Particulars format: Sender Number / Deposit / Commission
       let particulars = "";
       if (t.recipient === 'System Commission Charge' || t.way === 'Commission Charge' || (t.referenceNo && t.referenceNo.startsWith('COM-'))) {
         particulars = `Commission Fee: Ref ${t.referenceNo || 'COMMISSION'}`;
@@ -647,37 +727,31 @@ const INITIAL_INQUIRIES: SimulatedInquiry[] = [
         particulars = `Commission Credit (${t.way || 'System'})`;
       }
 
-      // Confirm Pin for CHQ.NO column
       const confirmPin = t.authPin ? `PIN: ${t.authPin}` : (isApproved ? 'PIN: 123456' : 'PND');
+
+      // Alternating row background for clean readability
+      if (index % 2 === 1) {
+        doc.setFillColor(248, 250, 252);
+        doc.rect(margin, y - 3, printableWidth, 5, "F");
+      }
 
       doc.setFont("courier", "normal");
       doc.setFontSize(7);
-      doc.text(dateStr, margin, y);
+      doc.setTextColor(15, 23, 42);
+      doc.text(dateStr, margin + 2, y);
       
-      const splitParticulars = doc.splitTextToSize(particulars, 56);
+      const splitParticulars = doc.splitTextToSize(particulars, 58);
       doc.text(splitParticulars, margin + 26, y);
-      
-      // Confirm Pin in CHQ.NO column
-      doc.text(confirmPin, margin + 86, y);
+      doc.text(confirmPin, margin + 88, y);
 
       if (withdrawText) doc.text(withdrawText, margin + 130, y, { align: "right" });
       if (depositText) doc.text(depositText, margin + 158, y, { align: "right" });
-
-      const isLastTxn = index === sortedTxns.length - 1;
-
-      if (isLastTxn) {
-        // Highlight last transaction balance cell with yellow background
-        const balStr = runningBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-        const textWidth = doc.getTextWidth(balStr) + 4;
-        doc.setFillColor(254, 240, 138); // Yellow highlight
-        doc.rect(rightMargin - textWidth, y - 3, textWidth, 4.5, "F");
-      }
 
       // Balance column in BOLD font
       doc.setFont("courier", "bold");
       doc.setFontSize(7.5);
       doc.setTextColor(15, 23, 42);
-      doc.text(runningBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }), rightMargin, y, { align: "right" });
+      doc.text(runningBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }), rightMargin - 2, y, { align: "right" });
 
       const lineLines = Array.isArray(splitParticulars) ? splitParticulars.length : 1;
       y += (lineLines * 3.8) + 2;
@@ -685,41 +759,60 @@ const INITIAL_INQUIRIES: SimulatedInquiry[] = [
 
     // End of table summary line
     y += 2;
+    doc.setDrawColor(203, 213, 225);
+    doc.setLineWidth(0.3);
     doc.line(margin, y, rightMargin, y);
-    y += 5;
+    y += 3;
 
-    // --- LAST LINE / LAST BALANCE ROW WITH BOLD TEXT & YELLOW BACKGROUND ---
-    const rowHeight = 8;
-    const yellowY = y - 4.5;
-    
-    // Fill Yellow Background for Last Line / Totals Row
-    doc.setFillColor(255, 235, 59); // Yellow (#ffeb3b)
-    doc.rect(margin, yellowY, printableWidth, rowHeight, "F");
-    
-    // Solid Yellow/Amber Accent Outline
-    doc.setDrawColor(202, 138, 4);
-    doc.setLineWidth(0.4);
-    doc.rect(margin, yellowY, printableWidth, rowHeight, "S");
+    // Check page overflow before rendering Last Line (Totals & Closing Balance Row)
+    if (y > bottomMargin - 30) {
+      doc.addPage();
+      addWatermark();
+      y = topMargin + 10;
+      doc.setFont("courier", "bold");
+      doc.setFontSize(8);
+      doc.setTextColor(15, 23, 42);
+      doc.text("DATE", margin + 2, y);
+      doc.text("PARTICULARS / DESCRIPTION", margin + 26, y);
+      doc.text("REF / PIN", margin + 88, y);
+      doc.text("WITHDRAW", margin + 130, y, { align: "right" });
+      doc.text("DEPOSIT", margin + 158, y, { align: "right" });
+      doc.text("BALANCE", rightMargin - 2, y, { align: "right" });
+      y += 3;
+      doc.line(margin, y, rightMargin, y);
+      y += 5;
+    }
 
-    // Totals row - Bold Text & Yellow Background
+    // --- TOTALS & CLOSING BALANCE ROW ---
+    const rowHeight = 7.5;
+    const totalsY = y - 4;
+    
+    // Clean Light Gray Fill for Totals Row
+    doc.setFillColor(241, 245, 249); // slate-100
+    doc.rect(margin, totalsY, printableWidth, rowHeight, "F");
+    
+    doc.setDrawColor(203, 213, 225);
+    doc.setLineWidth(0.3);
+    doc.rect(margin, totalsY, printableWidth, rowHeight, "S");
+
+    // Totals row text
     doc.setFont("courier", "bold");
-    doc.setFontSize(8.5);
-    doc.setTextColor(15, 23, 42); // High-contrast black text on yellow
-    doc.text("TOTALS / CLOSING BALANCE:", margin + 2, y + 1);
-    doc.text(totalWithdrawals.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }), margin + 130, y + 1, { align: "right" });
-    doc.text(totalDeposits.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }), margin + 158, y + 1, { align: "right" });
+    doc.setFontSize(7.5);
+    doc.setTextColor(15, 23, 42);
+    doc.text("TOTAL TRANSACTIONS / CLOSING BALANCE:", margin + 2, totalsY + 4.8);
+
+    const totalWithdrawStr = totalWithdrawals.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const totalDepositStr = totalDeposits.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const finalBalanceStr = runningBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+    doc.text(totalWithdrawStr, margin + 130, totalsY + 4.8, { align: "right" });
+    doc.text(totalDepositStr, margin + 158, totalsY + 4.8, { align: "right" });
     
     // Final Last Balance BOLD
     doc.setFont("courier", "bold");
-    doc.text(runningBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }), rightMargin - 2, y + 1, { align: "right" });
+    doc.text(finalBalanceStr, rightMargin - 2, totalsY + 4.8, { align: "right" });
 
-    y += rowHeight + 3;
-    // Reset line style
-    doc.setDrawColor(71, 85, 105);
-    doc.setLineWidth(0.2);
-    doc.line(margin, y, rightMargin, y);
-
-    y += 10;
+    y += rowHeight + 4;
 
     if (y > bottomMargin - 30) {
       doc.addPage();
@@ -727,20 +820,38 @@ const INITIAL_INQUIRIES: SimulatedInquiry[] = [
       y = topMargin + 10;
     }
 
-    // Disclaimer Block inside boundary
+    // Disclaimer Block
     doc.setFont("helvetica", "normal");
     doc.setFontSize(7.5);
-    doc.setTextColor(30, 41, 59);
-    doc.text("This Electronic Statement is valid without signature.", margin, y);
-    y += 4.5;
-    doc.text("Please advice the bank of any discrepancies within 14 days from the date of receipt of this statement.", margin, y);
+    doc.setTextColor(71, 85, 105);
+    doc.text("This Electronic Statement is generated by Mashud Telecom Banking System.", margin, y);
     y += 4;
-    doc.text("Otherwise this statement will be considered correct.", margin, y);
-    y += 8;
+    doc.text("It is a valid official document and does not require a physical signature.", margin, y);
+    y += 4;
+    doc.text("Please notify customer service of any discrepancies within 14 days of receipt.", margin, y);
+
+    // Security Verification Stamp on the right side
+    const stampX = rightMargin - 52;
+    const stampY = y - 8;
+    doc.setDrawColor(15, 23, 42);
+    doc.setLineWidth(0.3);
+    doc.rect(stampX, stampY, 52, 14, "S");
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(6.5);
+    doc.setTextColor(15, 23, 42);
+    doc.text("OFFICIAL E-STATEMENT VERIFIED", stampX + 26, stampY + 4, { align: "center" });
+    doc.setFont("courier", "bold");
+    doc.setFontSize(6);
+    doc.setTextColor(71, 85, 105);
+    doc.text(`HASH: SEC-${Math.random().toString(36).substring(2, 8).toUpperCase()}`, stampX + 26, stampY + 8, { align: "center" });
+    doc.text(`ISSUED: ${new Date().toISOString().slice(0, 10)}`, stampX + 26, stampY + 11.5, { align: "center" });
+
+    y += 10;
 
     doc.setFont("helvetica", "bold");
     doc.setFontSize(8);
-    doc.text("***END OF THE STATEMENT***", pageWidth / 2, y, { align: "center" });
+    doc.setTextColor(15, 23, 42);
+    doc.text("*** END OF STATEMENT ***", pageWidth / 2, y, { align: "center" });
 
     // Page Footer Bar inside 0.5 inch bottom boundary
     const footY = bottomMargin - 2;
@@ -757,20 +868,20 @@ const INITIAL_INQUIRIES: SimulatedInquiry[] = [
     doc.setFont("helvetica", "normal");
     doc.setFontSize(7);
     doc.setTextColor(100, 116, 139);
-    doc.text("proud member global alliance for banking on values", rightMargin, footY, { align: "right" });
+    doc.text("Mashud Telecom Online Banking System | Financial Services Division", rightMargin, footY, { align: "right" });
 
     // 5. Daily Date Filename Generation
-    const todayDateStr = new Date().toISOString().split('T')[0]; // Format: YYYY-MM-DD (e.g., 2026-08-01)
+    const todayDateStr = new Date().toISOString().split('T')[0];
     const cleanUserName = (user.fullName || 'User').replace(/[^a-zA-Z0-9]/g, '_');
     const statementFileName = filterNote 
-      ? `Filtered_Statement_${todayDateStr}_${cleanUserName}.pdf` 
-      : `Statement_${todayDateStr}_${cleanUserName}.pdf`;
+      ? `Bank_Filtered_Statement_${todayDateStr}_${cleanUserName}.pdf` 
+      : `Bank_Statement_${todayDateStr}_${cleanUserName}.pdf`;
 
-    // Save PDF with Daily Date Name
+    // Save PDF
     doc.save(statementFileName);
     return true;
-  } catch (error) {
-    console.error("PDF generation failed:", error);
+  } catch (err) {
+    console.error("PDF Generation Error:", err);
     return false;
   }
 };
@@ -6182,7 +6293,8 @@ export default function LiveSimulation() {
                                   filteredUserTransactions,
                                   currentSessionUser.commissionMultiplier ?? 7.5,
                                   charges,
-                                  filterNote
+                                  filterNote,
+                                  userTxns
                                 );
                                 if (success) {
                                   setSimAlert({ type: 'success', message: 'PDF Bank Statement downloaded successfully!' });
@@ -8113,7 +8225,8 @@ export default function LiveSimulation() {
                             filteredTxns, 
                             selectedUserToView.commissionMultiplier ?? 7.5, 
                             [], 
-                            filterNote
+                            filterNote,
+                            fullActivities
                           );
                           if (success) {
                             setSimAlert({ 
