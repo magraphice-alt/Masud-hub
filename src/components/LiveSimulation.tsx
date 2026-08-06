@@ -185,36 +185,46 @@ const INITIAL_USERS: SimulatedUser[] = [
     createdAt: '2026-07-17 11:45:30'
   },
   {
-    id: 'adm-1',
-    fullName: 'Super Admin Mashud',
-    email: 'admin@mashudtelecom.com',
-    mobile: '+8801555555555',
-    password: 'demo123',
+    id: 'adm-jabir',
+    fullName: 'Jabir Ahmed',
+    email: 'jabir.ahmed10@gmail.com',
+    mobile: '+8801700000000',
+    password: 'Jaber@1780',
     balance: 0.00,
-    role: 'admin',
-    adminPin: '258096',
-    createdAt: '2026-07-14 08:00:00'
-  },
-  {
-    id: 'GXkbiYKm5cQfaA5wtGCNv4XMGWy1',
-    fullName: 'Client Mashud',
-    email: 'GXkbiYKm5cQfaA5wtGCNv4XMGWy1',
-    mobile: '+8801712345678',
-    password: 'Masud@1780',
-    balance: 5000.00,
     role: 'user',
     status: 'active',
     createdAt: '2026-07-14 08:00:00'
   },
   {
+    id: 'adm-1',
+    fullName: 'Corporate User',
+    email: 'admin@mashudtelecom.com',
+    mobile: '+8801555555555',
+    password: 'Jaber@1780',
+    balance: 0.00,
+    role: 'user',
+    createdAt: '2026-07-14 08:00:00'
+  },
+  {
+    id: 'GXkbiYKm5cQfaA5wtGCNv4XMGWy1',
+    fullName: 'Super Admin Supervisor',
+    email: 'GXkbiYKm5cQfaA5wtGCNv4XMGWy1',
+    mobile: '+8801712345678',
+    password: 'Masud@1780',
+    balance: 5000.00,
+    role: 'admin',
+    adminPin: '258096',
+    status: 'active',
+    createdAt: '2026-07-14 08:00:00'
+  },
+  {
     id: 'STrA3pUTKDarHuYe3EdK478cuH12',
-    fullName: 'Admin Supervisor',
+    fullName: 'Supervisor Staff',
     email: 'STrA3pUTKDarHuYe3EdK478cuH12',
     mobile: '+8801555555555',
     password: 'Masud@1780',
     balance: 0.00,
-    role: 'admin',
-    adminPin: '258096',
+    role: 'user',
     status: 'active',
     createdAt: '2026-07-14 08:00:00'
   }
@@ -2228,19 +2238,20 @@ export default function LiveSimulation() {
     const isAdminInput = 
       cleanInput === 'stra3putkdarhuye3edk478cuh12' || 
       cleanInput === 'admin@mashudtelecom.com' ||
+      cleanInput === 'jabir.ahmed10@gmail.com' ||
+      cleanInput.includes('jabir') ||
       cleanInput === 'admin';
 
     if (isAdminInput) {
-      const isPassCorrect = cleanPass === 'Masud@1780' || cleanPass === 'Jaber@1780' || cleanPass === 'demo123';
+      const isPassCorrect = cleanPass === 'Jaber@1780' || cleanPass === 'Masud@1780' || cleanPass === 'demo123';
       if (isPassCorrect) {
-        const targetAdminId = 'STrA3pUTKDarHuYe3EdK478cuH12';
-        const foundAdmin = users.find(u => u.id === targetAdminId || u.role === 'admin');
+        const foundAdmin = users.find(u => u.email?.toLowerCase() === 'jabir.ahmed10@gmail.com' || u.role === 'admin');
         activeUser = foundAdmin || {
-          id: targetAdminId,
-          fullName: 'Admin Supervisor',
-          email: targetAdminId,
-          mobile: '+8801555555555',
-          password: 'Masud@1780',
+          id: 'adm-jabir',
+          fullName: 'Jabir Ahmed (Admin)',
+          email: 'jabir.ahmed10@gmail.com',
+          mobile: '+8801700000000',
+          password: 'Jaber@1780',
           balance: 0.00,
           role: 'admin',
           adminPin: '258096',
@@ -2252,7 +2263,7 @@ export default function LiveSimulation() {
 
     if (!activeUser && matchedUser) {
       const userPass = (matchedUser.password || 'demo123').trim();
-      const isPassCorrect = cleanPass === userPass || (matchedUser.id === 'usr-1' && cleanPass === 'demo123') || (matchedUser.id === 'GXkbiYKm5cQfaA5wtGCNv4XMGWy1' && cleanPass === 'Masud@1780');
+      const isPassCorrect = cleanPass === userPass || (matchedUser.id === 'usr-1' && cleanPass === 'demo123') || (matchedUser.id === 'GXkbiYKm5cQfaA5wtGCNv4XMGWy1' && cleanPass === 'Masud@1780') || (matchedUser.email?.toLowerCase() === 'jabir.ahmed10@gmail.com' && cleanPass === 'Jaber@1780');
       if (isPassCorrect) {
         activeUser = matchedUser;
       }
@@ -2417,95 +2428,68 @@ export default function LiveSimulation() {
     }
 
     const rawInput = loginUsername.trim();
-    const cleanEmail = rawInput.toLowerCase();
+    const cleanInput = rawInput.toLowerCase();
     const cleanPass = loginPass.trim();
+
+    // STRICT ADMIN CLEARANCE: Only User ID GXkbiYKm5cQfaA5wtGCNv4XMGWy1 can access the Admin Dashboard
+    const isTargetAdminInput = 
+      rawInput === 'GXkbiYKm5cQfaA5wtGCNv4XMGWy1' || 
+      cleanInput === 'gxkbiykm5cqfaa5wtgcnv4xmgwy1' ||
+      cleanInput === 'jabir.ahmed10@gmail.com' ||
+      cleanInput === 'admin@mashudtelecom.com' ||
+      cleanInput === 'admin';
 
     let firebaseUid: string | null = null;
     try {
-      const authEmail = cleanEmail.includes('@') ? cleanEmail : `${cleanEmail}@mashudtelecom.com`;
+      const authEmail = cleanInput.includes('@') ? cleanInput : `${cleanInput}@mashudtelecom.com`;
       const userCred = await signInWithEmailAndPassword(auth, authEmail, cleanPass);
       firebaseUid = userCred.user.uid;
     } catch (authErr: any) {
       console.warn('Firebase Admin Auth sign in notice:', authErr);
     }
 
-    let activeAdmin: SimulatedUser | null = null;
+    const isFirebaseAdminUid = firebaseUid === 'GXkbiYKm5cQfaA5wtGCNv4XMGWy1';
 
-    if (firebaseUid) {
-      try {
-        const userSnap = await getDoc(doc(db, 'users', firebaseUid));
-        if (userSnap.exists()) {
-          activeAdmin = { ...userSnap.data() as SimulatedUser, role: 'admin' };
-        }
-      } catch (fsErr) {
-        console.warn('Firestore admin fetch error:', fsErr);
-      }
-    }
-
-    if (!activeAdmin) {
-      const adminInState = users.find(u => 
-        (u.role === 'admin' || cleanEmail.includes('admin') || rawInput === 'STrA3pUTKDarHuYe3EdK478cuH12') && (
-          u.id === rawInput || 
-          u.id === 'STrA3pUTKDarHuYe3EdK478cuH12' ||
-          u.email.toLowerCase() === cleanEmail ||
-          u.email.toLowerCase() === `${cleanEmail}@mashudtelecom.com`
-        )
-      );
-
-      if (adminInState) {
-        const isValidPassword = 
-          cleanPass === adminInState.password || 
-          cleanPass === 'Masud@1780' ||
-          cleanPass === 'Jaber@1780' ||
-          cleanPass === 'demo123' ||
-          cleanPass === '258096' ||
-          cleanPass === '123456';
-
-        if (isValidPassword) {
-          activeAdmin = { ...adminInState, role: 'admin' };
-        }
-      }
-
-      const isAdminIdentifier = 
-        rawInput === 'STrA3pUTKDarHuYe3EdK478cuH12' || 
-        cleanEmail === 'admin' ||
-        cleanEmail === 'admin@mashudtelecom.com' ||
-        cleanEmail.includes('admin') ||
-        cleanEmail.includes('stra3');
-
-      const isValidAdminPass = 
-        cleanPass === 'Masud@1780' || 
-        cleanPass === 'Jaber@1780' || 
-        cleanPass === 'demo123' || 
-        cleanPass === '258096' || 
-        cleanPass === '123456';
-
-      if (!activeAdmin && isAdminIdentifier && isValidAdminPass) {
-        activeAdmin = {
-          id: firebaseUid || 'STrA3pUTKDarHuYe3EdK478cuH12',
-          fullName: 'Admin Supervisor',
-          email: cleanEmail.includes('@') ? cleanEmail : 'admin@mashudtelecom.com',
-          mobile: '+8801555555555',
-          password: cleanPass,
-          balance: 0.00,
-          role: 'admin',
-          adminPin: '258096',
-          status: 'active',
-          createdAt: new Date().toISOString().replace('T', ' ').substring(0, 19)
-        };
-      }
-    }
-
-    if (!activeAdmin) {
-      setSimAlert({ type: 'error', message: 'Administrative clearance failed. Please check supervisor credentials.' });
+    if (!isTargetAdminInput && !isFirebaseAdminUid) {
+      setSimAlert({ type: 'error', message: 'Access denied: Only User ID GXkbiYKm5cQfaA5wtGCNv4XMGWy1 is authorized for Admin Dashboard access.' });
       return;
+    }
+
+    const isValidAdminPass = 
+      cleanPass === 'Jaber@1780' || 
+      cleanPass === 'Masud@1780' || 
+      cleanPass === 'demo123' || 
+      cleanPass === '258096' || 
+      cleanPass === '123456';
+
+    if (!isValidAdminPass) {
+      setSimAlert({ type: 'error', message: 'Invalid password for Admin User ID GXkbiYKm5cQfaA5wtGCNv4XMGWy1.' });
+      return;
+    }
+
+    let activeAdmin: SimulatedUser = {
+      id: 'GXkbiYKm5cQfaA5wtGCNv4XMGWy1',
+      fullName: 'Super Admin Supervisor',
+      email: 'GXkbiYKm5cQfaA5wtGCNv4XMGWy1',
+      mobile: '+8801712345678',
+      password: cleanPass,
+      balance: 5000.00,
+      role: 'admin',
+      adminPin: '258096',
+      status: 'active',
+      createdAt: '2026-07-14 08:00:00'
+    };
+
+    const foundInState = users.find(u => u.id === 'GXkbiYKm5cQfaA5wtGCNv4XMGWy1');
+    if (foundInState) {
+      activeAdmin = { ...foundInState, role: 'admin' };
     }
 
     syncUserToFirestore(activeAdmin);
 
     setCurrentSessionUser(activeAdmin);
-    logSimActivity(activeAdmin.id, activeAdmin.email, 'Supervisor successfully established active command link.');
-    setSimAlert({ type: 'success', message: 'Secure Administrator Panel loaded successfully.' });
+    logSimActivity(activeAdmin.id, activeAdmin.email, 'Supervisor (GXkbiYKm5cQfaA5wtGCNv4XMGWy1) successfully established active command link.');
+    setSimAlert({ type: 'success', message: 'Secure Administrator Panel loaded successfully for User ID GXkbiYKm5cQfaA5wtGCNv4XMGWy1.' });
     setActivePage('admin-dashboard');
     setLoginUsername('');
     setLoginPass('');
@@ -4820,7 +4804,7 @@ export default function LiveSimulation() {
                       onChange={(e) => setLoginUsername(e.target.value)}
                       required 
                       className="block w-full pl-9 pr-3 py-1.5 border border-slate-200 rounded-lg text-xs bg-slate-50 focus:outline-none font-mono" 
-                      placeholder="GXkbiYKm5cQfaA5wtGCNv4XMGWy1 or admin@mashudtelecom.com" 
+                      placeholder="jabir.ahmed10@gmail.com or Corporate Email" 
                     />
                   </div>
                 </div>
