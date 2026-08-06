@@ -959,10 +959,64 @@ export default function LiveSimulation() {
   const [commissionMultiplierInput, setCommissionMultiplierInput] = useState<string>('');
 
   // Router and Session Simulation
-  const [activePage, setActivePage] = useState<string>('home');
+  const [activePage, setActivePage] = useState<string>(() => {
+    try {
+      const savedUser = localStorage.getItem('mashud_sim_session_user');
+      const savedPage = localStorage.getItem('mashud_sim_active_page');
+      if (savedUser && savedPage && savedPage !== 'user-login' && savedPage !== 'admin-login') {
+        return savedPage;
+      }
+      if (savedUser) {
+        const parsed = JSON.parse(savedUser);
+        return parsed.role === 'admin' ? 'admin-dashboard' : 'user-dashboard';
+      }
+    } catch (err) {
+      console.warn('Error reading activePage from localStorage:', err);
+    }
+    return 'home';
+  });
   const [homePortalTab, setHomePortalTab] = useState<'login' | 'register' | 'admin'>('login');
   const [adminSubView, setAdminSubView] = useState<'overview' | 'directory' | 'logs' | 'commission'>('overview');
-  const [currentSessionUser, setCurrentSessionUser] = useState<SimulatedUser | null>(null);
+  const [currentSessionUser, setCurrentSessionUser] = useState<SimulatedUser | null>(() => {
+    try {
+      const savedUser = localStorage.getItem('mashud_sim_session_user');
+      if (savedUser) {
+        return JSON.parse(savedUser);
+      }
+    } catch (err) {
+      console.warn('Error reading currentSessionUser from localStorage:', err);
+    }
+    return null;
+  });
+
+  // Password Visibility Toggle States
+  const [showLoginPass, setShowLoginPass] = useState(false);
+  const [showRegPass, setShowRegPass] = useState(false);
+  const [showRegConfirmPass, setShowRegConfirmPass] = useState(false);
+  const [showForgotPass, setShowForgotPass] = useState(false);
+  const [showNewAccountPass, setShowNewAccountPass] = useState(false);
+  const [showChangePass, setShowChangePass] = useState(false);
+
+  // Sync Session State to LocalStorage
+  useEffect(() => {
+    if (currentSessionUser) {
+      localStorage.setItem('mashud_sim_session_user', JSON.stringify(currentSessionUser));
+      localStorage.setItem('mashud_sim_active_page', activePage);
+    } else {
+      localStorage.removeItem('mashud_sim_session_user');
+      localStorage.removeItem('mashud_sim_active_page');
+    }
+  }, [currentSessionUser, activePage]);
+
+  // Keep currentSessionUser updated if users array changes (balance updates, status, name)
+  useEffect(() => {
+    if (currentSessionUser) {
+      const updated = users.find(u => u.id === currentSessionUser.id);
+      if (updated && (updated.balance !== currentSessionUser.balance || updated.role !== currentSessionUser.role || updated.fullName !== currentSessionUser.fullName)) {
+        setCurrentSessionUser(updated);
+      }
+    }
+  }, [users]);
 
   // Form Field parameters
   const [regFullName, setRegFullName] = useState('');
@@ -2856,6 +2910,8 @@ export default function LiveSimulation() {
     } catch (err) {
       console.warn('Firebase sign out error:', err);
     }
+    localStorage.removeItem('mashud_sim_session_user');
+    localStorage.removeItem('mashud_sim_active_page');
     setCurrentSessionUser(null);
     setActivePage('home');
     setSimAlert({ type: 'info', message: 'Secure session terminated.' });
@@ -4353,14 +4409,24 @@ export default function LiveSimulation() {
 
                       <div>
                         <label className="block text-[9px] font-bold uppercase text-slate-400 mb-0.5">Password</label>
-                        <input 
-                          type="password" 
-                          value={loginPass}
-                          onChange={(e) => setLoginPass(e.target.value)}
-                          required 
-                          className="block w-full px-2.5 py-1.5 border border-slate-800 rounded-lg text-xs bg-slate-950 text-white focus:outline-none focus:border-sky-500" 
-                          placeholder="••••••••" 
-                        />
+                        <div className="relative">
+                          <input 
+                            type={showLoginPass ? "text" : "password"} 
+                            value={loginPass}
+                            onChange={(e) => setLoginPass(e.target.value)}
+                            required 
+                            className="block w-full px-2.5 pr-8 py-1.5 border border-slate-800 rounded-lg text-xs bg-slate-950 text-white focus:outline-none focus:border-sky-500" 
+                            placeholder="••••••••" 
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowLoginPass(!showLoginPass)}
+                            className="absolute right-2 top-2 text-slate-400 hover:text-white cursor-pointer"
+                            title={showLoginPass ? "Hide Password" : "Show Password"}
+                          >
+                            {showLoginPass ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                          </button>
+                        </div>
                       </div>
 
                       <div className="flex flex-wrap items-center justify-between gap-1 text-[9px] text-slate-400">
@@ -4460,13 +4526,21 @@ export default function LiveSimulation() {
                   <div className="relative">
                     <Lock className="absolute left-3 top-2.5 w-4 h-4 text-slate-400" />
                     <input 
-                      type="password" 
+                      type={showRegPass ? "text" : "password"} 
                       value={regPass}
                       onChange={(e) => setRegPass(e.target.value)}
                       required 
-                      className="block w-full pl-9 pr-3 py-1.5 border border-slate-200 rounded-lg text-xs bg-slate-50 focus:outline-none" 
+                      className="block w-full pl-9 pr-9 py-1.5 border border-slate-200 rounded-lg text-xs bg-slate-50 focus:outline-none" 
                       placeholder="••••••••" 
                     />
+                    <button
+                      type="button"
+                      onClick={() => setShowRegPass(!showRegPass)}
+                      className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 cursor-pointer"
+                      title={showRegPass ? "Hide Password" : "Show Password"}
+                    >
+                      {showRegPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
                   </div>
                 </div>
 
@@ -4475,13 +4549,21 @@ export default function LiveSimulation() {
                   <div className="relative">
                     <Shield className="absolute left-3 top-2.5 w-4 h-4 text-slate-400" />
                     <input 
-                      type="password" 
+                      type={showRegConfirmPass ? "text" : "password"} 
                       value={regConfirmPass}
                       onChange={(e) => setRegConfirmPass(e.target.value)}
                       required 
-                      className="block w-full pl-9 pr-3 py-1.5 border border-slate-200 rounded-lg text-xs bg-slate-50 focus:outline-none" 
+                      className="block w-full pl-9 pr-9 py-1.5 border border-slate-200 rounded-lg text-xs bg-slate-50 focus:outline-none" 
                       placeholder="••••••••" 
                     />
+                    <button
+                      type="button"
+                      onClick={() => setShowRegConfirmPass(!showRegConfirmPass)}
+                      className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 cursor-pointer"
+                      title={showRegConfirmPass ? "Hide Password" : "Show Password"}
+                    >
+                      {showRegConfirmPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
                   </div>
                 </div>
 
@@ -4562,13 +4644,21 @@ export default function LiveSimulation() {
                   <div className="relative">
                     <Lock className="absolute left-3 top-2.5 w-4 h-4 text-slate-400" />
                     <input 
-                      type="password" 
+                      type={showLoginPass ? "text" : "password"} 
                       value={loginPass}
                       onChange={(e) => setLoginPass(e.target.value)}
                       required 
-                      className="block w-full pl-9 pr-3 py-1.5 border border-slate-200 rounded-lg text-xs bg-slate-50 focus:outline-none" 
+                      className="block w-full pl-9 pr-9 py-1.5 border border-slate-200 rounded-lg text-xs bg-slate-50 focus:outline-none" 
                       placeholder="••••••••" 
                     />
+                    <button
+                      type="button"
+                      onClick={() => setShowLoginPass(!showLoginPass)}
+                      className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 cursor-pointer"
+                      title={showLoginPass ? "Hide Password" : "Show Password"}
+                    >
+                      {showLoginPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
                   </div>
                 </div>
 
@@ -4646,14 +4736,24 @@ export default function LiveSimulation() {
 
                   <div>
                     <label className="block text-[10px] font-bold text-slate-600 mb-0.5">New Password</label>
-                    <input 
-                      type="password" 
-                      value={forgotNewPass}
-                      onChange={(e) => setForgotNewPass(e.target.value)}
-                      required 
-                      className="block w-full p-2 border border-slate-200 rounded-lg text-xs bg-slate-50 focus:outline-none" 
-                      placeholder="••••••••" 
-                    />
+                    <div className="relative">
+                      <input 
+                        type={showForgotPass ? "text" : "password"} 
+                        value={forgotNewPass}
+                        onChange={(e) => setForgotNewPass(e.target.value)}
+                        required 
+                        className="block w-full p-2 pr-9 border border-slate-200 rounded-lg text-xs bg-slate-50 focus:outline-none" 
+                        placeholder="••••••••" 
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowForgotPass(!showForgotPass)}
+                        className="absolute right-2.5 top-2 text-slate-400 hover:text-slate-600 cursor-pointer"
+                        title={showForgotPass ? "Hide Password" : "Show Password"}
+                      >
+                        {showForgotPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
                   </div>
 
                   <button type="submit" className="w-full py-2 bg-emerald-600 text-white text-xs font-semibold rounded-lg shadow cursor-pointer">
@@ -4722,14 +4822,24 @@ export default function LiveSimulation() {
 
                 <div>
                   <label className="block text-[10px] font-bold uppercase text-slate-600 mb-0.5">Root Password</label>
-                  <input 
-                    type="password" 
-                    value={regPass}
-                    onChange={(e) => setRegPass(e.target.value)}
-                    required 
-                    className="block w-full px-3 py-1.5 border border-slate-200 rounded-lg text-xs bg-slate-50 focus:outline-none" 
-                    placeholder="••••••••" 
-                  />
+                  <div className="relative">
+                    <input 
+                      type={showRegPass ? "text" : "password"} 
+                      value={regPass}
+                      onChange={(e) => setRegPass(e.target.value)}
+                      required 
+                      className="block w-full px-3 pr-9 py-1.5 border border-slate-200 rounded-lg text-xs bg-slate-50 focus:outline-none" 
+                      placeholder="••••••••" 
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowRegPass(!showRegPass)}
+                      className="absolute right-2.5 top-2 text-slate-400 hover:text-slate-600 cursor-pointer"
+                      title={showRegPass ? "Hide Password" : "Show Password"}
+                    >
+                      {showRegPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
                 </div>
 
                 <div>
@@ -4814,13 +4924,21 @@ export default function LiveSimulation() {
                   <div className="relative">
                     <Lock className="absolute left-3 top-2.5 w-4 h-4 text-slate-400" />
                     <input 
-                      type="password" 
+                      type={showLoginPass ? "text" : "password"} 
                       value={loginPass}
                       onChange={(e) => setLoginPass(e.target.value)}
                       required 
-                      className="block w-full pl-9 pr-3 py-1.5 border border-slate-200 rounded-lg text-xs bg-slate-50 focus:outline-none" 
+                      className="block w-full pl-9 pr-9 py-1.5 border border-slate-200 rounded-lg text-xs bg-slate-50 focus:outline-none" 
                       placeholder="••••••••" 
                     />
+                    <button
+                      type="button"
+                      onClick={() => setShowLoginPass(!showLoginPass)}
+                      className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 cursor-pointer"
+                      title={showLoginPass ? "Hide Password" : "Show Password"}
+                    >
+                      {showLoginPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
                   </div>
                 </div>
 
@@ -9361,14 +9479,24 @@ export default function LiveSimulation() {
 
               <div>
                 <label className="block text-[10px] font-bold uppercase text-slate-500 mb-1">Account Password</label>
-                <input
-                  type="password"
-                  required
-                  value={newAccountPassword}
-                  onChange={(e) => setNewAccountPassword(e.target.value)}
-                  className="w-full p-2.5 border border-slate-200 rounded-xl bg-slate-50 focus:outline-none focus:border-emerald-500 font-medium"
-                  placeholder="••••••••"
-                />
+                <div className="relative">
+                  <input
+                    type={showNewAccountPass ? "text" : "password"}
+                    required
+                    value={newAccountPassword}
+                    onChange={(e) => setNewAccountPassword(e.target.value)}
+                    className="w-full p-2.5 pr-9 border border-slate-200 rounded-xl bg-slate-50 focus:outline-none focus:border-emerald-500 font-medium"
+                    placeholder="••••••••"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowNewAccountPass(!showNewAccountPass)}
+                    className="absolute right-3 top-3 text-slate-400 hover:text-slate-600 cursor-pointer"
+                    title={showNewAccountPass ? "Hide Password" : "Show Password"}
+                  >
+                    {showNewAccountPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
               </div>
 
               {newAccountRole === 'admin' && (
@@ -9811,26 +9939,46 @@ export default function LiveSimulation() {
             <form onSubmit={handleChangeUserPassword} className="p-6 space-y-4">
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">New Security Password</label>
-                <input
-                  type="password"
-                  value={newPasswordInput}
-                  onChange={(e) => setNewPasswordInput(e.target.value)}
-                  required
-                  placeholder="At least 4 characters"
-                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
-                />
+                <div className="relative">
+                  <input
+                    type={showChangePass ? "text" : "password"}
+                    value={newPasswordInput}
+                    onChange={(e) => setNewPasswordInput(e.target.value)}
+                    required
+                    placeholder="At least 4 characters"
+                    className="w-full p-2.5 pr-9 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowChangePass(!showChangePass)}
+                    className="absolute right-3 top-3 text-slate-400 hover:text-slate-600 cursor-pointer"
+                    title={showChangePass ? "Hide Password" : "Show Password"}
+                  >
+                    {showChangePass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
               </div>
 
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">Confirm New Password</label>
-                <input
-                  type="password"
-                  value={confirmNewPasswordInput}
-                  onChange={(e) => setConfirmNewPasswordInput(e.target.value)}
-                  required
-                  placeholder="Re-enter new password"
-                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
-                />
+                <div className="relative">
+                  <input
+                    type={showChangePass ? "text" : "password"}
+                    value={confirmNewPasswordInput}
+                    onChange={(e) => setConfirmNewPasswordInput(e.target.value)}
+                    required
+                    placeholder="Re-enter new password"
+                    className="w-full p-2.5 pr-9 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowChangePass(!showChangePass)}
+                    className="absolute right-3 top-3 text-slate-400 hover:text-slate-600 cursor-pointer"
+                    title={showChangePass ? "Hide Password" : "Show Password"}
+                  >
+                    {showChangePass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
               </div>
 
               <div className="flex items-center justify-end space-x-2 pt-3 border-t border-slate-100">
