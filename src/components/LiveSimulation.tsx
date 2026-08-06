@@ -4383,16 +4383,6 @@ export default function LiveSimulation() {
                         <button
                           type="button"
                           onClick={() => {
-                            setLoginUsername('GXkbiYKm5cQfaA5wtGCNv4XMGWy1');
-                            setLoginPass('Masud@1780');
-                          }}
-                          className="text-sky-400 hover:underline cursor-pointer font-medium"
-                        >
-                          ⚡ Autofill Client ID (GXkbiY...)
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
                             setLoginUsername('masud@gmail.com');
                             setLoginPass('123456');
                           }}
@@ -4556,43 +4546,6 @@ export default function LiveSimulation() {
                 </div>
                 <h1 className="text-xl font-bold tracking-tight text-slate-950">Client Gateway Access</h1>
                 <p className="text-[10px] text-slate-500 font-medium">Configure credentials to load wallet accounts</p>
-              </div>
-
-              {/* Quick Login Assist Card */}
-              <div className="bg-slate-50 border border-slate-200 rounded-xl p-3.5 space-y-2">
-                <span className="text-[10px] font-bold uppercase text-slate-500 tracking-wider block">💡 Live Demo Quick Sign In</span>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[10px]">
-                  <button 
-                    type="button" 
-                    onClick={() => {
-                      setLoginUsername('masud@gmail.com');
-                      setLoginPass('demo123');
-                    }}
-                    className="p-2 border border-slate-200 hover:border-sky-500 hover:bg-sky-50/50 rounded-lg text-left transition cursor-pointer"
-                  >
-                    <div className="flex items-center justify-between gap-1">
-                      <span className="font-bold block text-slate-900">Masud Alam (User)</span>
-                      <span className="text-[8px] px-1 py-0.2 bg-emerald-100 text-emerald-800 font-extrabold rounded uppercase">Active</span>
-                    </div>
-                    <span className="text-slate-500 font-mono">masud@gmail.com</span>
-                    <span className="text-[9px] block text-sky-600 font-bold mt-0.5">Click to Autofill</span>
-                  </button>
-                  <button 
-                    type="button" 
-                    onClick={() => {
-                      setLoginUsername('raihan@gmail.com');
-                      setLoginPass('demo123');
-                    }}
-                    className="p-2 border border-slate-200 hover:border-sky-500 hover:bg-sky-50/50 rounded-lg text-left transition cursor-pointer"
-                  >
-                    <span className="font-bold block text-slate-900">Raihan Kabir (User)</span>
-                    <span className="text-slate-500 font-mono">raihan@gmail.com</span>
-                    <span className="text-[9px] block text-sky-600 font-bold mt-0.5">Click to Autofill</span>
-                  </button>
-                </div>
-                <div className="text-[9px] text-slate-500 text-center font-medium">
-                  Default Demo Password: <code className="bg-slate-200 px-1 py-0.5 rounded text-slate-800 font-bold">demo123</code>
-                </div>
               </div>
 
               <form onSubmit={handleUserLogin} className="space-y-3">
@@ -4854,46 +4807,6 @@ export default function LiveSimulation() {
                 </div>
                 <h1 className="text-xl font-bold tracking-tight text-slate-950">Admin Secure Authorization</h1>
                 <p className="text-[10px] text-slate-500">Provide corporate email, Admin ID, and password</p>
-              </div>
-
-              {/* Quick Admin Assist Card */}
-              <div className="bg-slate-50 border border-slate-200 rounded-xl p-3.5 space-y-2">
-                <span className="text-[10px] font-bold uppercase text-emerald-700 tracking-wider block">🛡️ Live Demo Admin Quick Sign In</span>
-                
-                <div className="space-y-1.5">
-                  <button 
-                    type="button" 
-                    onClick={() => {
-                      setLoginUsername('GXkbiYKm5cQfaA5wtGCNv4XMGWy1');
-                      setLoginPass('Masud@1780');
-                    }}
-                    className="w-full p-2.5 border border-emerald-200 hover:border-emerald-500 hover:bg-emerald-50/50 rounded-lg text-left transition cursor-pointer"
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="font-bold block text-slate-900 text-xs">Primary Admin ID</span>
-                      <span className="text-[9px] bg-emerald-100 text-emerald-800 font-bold px-1.5 py-0.5 rounded">Primary</span>
-                    </div>
-                    <span className="text-slate-600 font-mono text-[10px] block font-semibold truncate">ID: GXkbiYKm5cQfaA5wtGCNv4XMGWy1</span>
-                    <div className="flex justify-between text-[9px] text-slate-400 mt-0.5">
-                      <span>Pass: <strong className="text-slate-700 font-mono">Masud@1780</strong></span>
-                      <span>PIN: <strong className="text-slate-700 font-mono">258096</strong></span>
-                    </div>
-                    <span className="text-[9px] block text-emerald-600 font-bold mt-1">Click to Autofill Admin ID</span>
-                  </button>
-
-                  <button 
-                    type="button" 
-                    onClick={() => {
-                      setLoginUsername('admin@mashudtelecom.com');
-                      setLoginPass('demo123');
-                    }}
-                    className="w-full p-2 border border-slate-200 hover:border-emerald-400 hover:bg-emerald-50/30 rounded-lg text-left transition cursor-pointer"
-                  >
-                    <span className="font-bold block text-slate-800 text-[11px]">Super Admin Corporate Email</span>
-                    <span className="text-slate-500 font-mono text-[10px]">Email: admin@mashudtelecom.com</span>
-                    <span className="text-[9px] block text-emerald-600 font-bold mt-0.5">Click to Autofill Email</span>
-                  </button>
-                </div>
               </div>
 
               <form onSubmit={handleAdminLogin} className="space-y-3">
